@@ -3,7 +3,8 @@ from ..base import Player, PlayersPair, Match, Session
 from utils.datetime_utils import utc_datetime
 import settings
 from datetime import datetime
-from sqlalchemy import and_, asc, exists, or_, select
+from sqlalchemy import and_, desc, exists, or_, select
+
 
 log = settings.ProjectLoggerFactory.get_for("database.match")
 
@@ -101,6 +102,6 @@ def get_all_matches_for_player_by_period(player_id: int, start_date: datetime, e
                     Match.players_pair_id_2.in_(player_pairs_ids),
                 ),
             )
-        ).order_by(Match.played_at)
+        ).order_by(desc(Match.played_at))
         matches = session.execute(stmt).scalars().all()
         return matches
