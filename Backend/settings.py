@@ -64,6 +64,7 @@ class SettingsJSON:
 
 BACKEND_VERSION: Final = SettingsJSON.get(var_name="VERSION")  # use '-vn.n.n' format, where 'n' - number
 BACKEND_TIMEZONE: Final = ZoneInfo(SettingsJSON.get_optional(var_name="TIMEZONE", default="UTC"))
+APP_ROOT_PATH: Final = SettingsJSON.get_optional(var_name="APP_ROOT_PATH", default="/api", write_default=False)
 APP_HOST: Final = SettingsJSON.get_optional(var_name="APP_HOST", default="127.0.0.1", write_default=False)
 APP_PORT: Final = int(SettingsJSON.get_optional(var_name="APP_PORT", default=8000, write_default=False))
 LINK_TO_DATABASE: Final = SettingsJSON.get(var_name="LINK_TO_DATABASE", prompt=(
