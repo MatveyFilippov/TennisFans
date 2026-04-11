@@ -5,10 +5,10 @@ from datetime import datetime
 from sqlalchemy import asc, exists
 
 
-log = settings.ProjectLoggerFactory.get_for("database.player")
+log = settings.ProjectLoggerFactory.get_for("database.players")
 
 
-def _get_player(session: Session, player_id: int) -> Player | None:
+def _get_player(session: Session, player_id: int) -> Player:
     log.debug(f"Reading Player[id={player_id}]")
     player = session.get(Player, player_id)
     if not player:
@@ -40,7 +40,7 @@ def create_player(name: str, registered_at: datetime | None = None) -> Player:
         return new_player
 
 
-def get_player(player_id: int) -> Player | None:
+def get_player(player_id: int) -> Player:
     with Session() as session:
         return _get_player(session=session, player_id=player_id)
 

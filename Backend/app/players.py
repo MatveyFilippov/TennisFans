@@ -10,8 +10,8 @@ router = APIRouter(prefix="/players", tags=["players"])
 
 
 @router.post("", response_model=PlayerResponse, status_code=status.HTTP_201_CREATED)
-async def create_player(create_player_body: CreatePlayerRequest):
-    player_entity = db.players.create_player(name=create_player_body.name, registered_at=create_player_body.registered_at)
+async def create_player(body: CreatePlayerRequest):
+    player_entity = db.players.create_player(name=body.name, registered_at=body.registered_at)
     log.info(f"Create new Player with id={player_entity.id}")
     return PlayerResponse.of(player_entity=player_entity)
 

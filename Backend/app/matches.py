@@ -10,29 +10,29 @@ router = APIRouter(prefix="/matches", tags=["matches"])
 
 
 @router.post("", response_model=MatchResponse, status_code=status.HTTP_201_CREATED)
-async def register_match(register_body: RegisterMatchRequest):
-    if register_body.side1.match_score < 0 or register_body.side2.match_score < 0:
-        log.info(f"Match score={register_body.side1.match_score}|{register_body.side2.match_score} is negative")
+async def register_match(body: RegisterMatchRequest):
+    if body.side1.match_score < 0 or body.side2.match_score < 0:
+        log.info(f"Match score={body.side1.match_score}|{body.side2.match_score} is negative")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Match score can't be negative")
 
-    if len({register_body.side1.player1_id, register_body.side1.player2_id, register_body.side2.player1_id, register_body.side2.player2_id}) != 4:
-        log.info(f"Player with id={register_body.side1.player1_id}|{register_body.side1.player2_id}|{register_body.side2.player1_id}|{register_body.side2.player2_id} doesn't unique")
+    if len({body.side1.player1_id, body.side1.player2_id, body.side2.player1_id, body.side2.player2_id}) != 4:
+        log.info(f"Player with id={body.side1.player1_id}|{body.side1.player2_id}|{body.side2.player1_id}|{body.side2.player2_id} doesn't unique")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not unique Player")
 
     if (
-        not db.players.is_player_exists(register_body.side1.player1_id)
-        or not db.players.is_player_exists(register_body.side1.player2_id)
-        or not db.players.is_player_exists(register_body.side2.player1_id)
-        or not db.players.is_player_exists(register_body.side2.player2_id)
+        not db.players.is_player_exists(body.side1.player1_id)
+        or not db.players.is_player_exists(body.side1.player2_id)
+        or not db.players.is_player_exists(body.side2.player1_id)
+        or not db.players.is_player_exists(body.side2.player2_id)
     ):
-        log.info(f"Player with id={register_body.side1.player1_id}|{register_body.side1.player2_id}|{register_body.side2.player1_id}|{register_body.side2.player2_id} doesn't exists")
+        log.info(f"Player with id={body.side1.player1_id}|{body.side1.player2_id}|{body.side2.player1_id}|{body.side2.player2_id} doesn't exists")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No such Player")
 
     match_entity = db.matches.register_match(
-        players_pair_1_ids=(register_body.side1.player1_id, register_body.side1.player2_id,),
-        players_pair_2_ids=(register_body.side2.player1_id, register_body.side2.player2_id,),
-        players_pair_1_score=register_body.side1.match_score,
-        players_pair_2_score=register_body.side2.match_score,
+        players_pair_1_ids=(body.side1.player1_id, body.side1.player2_id,),
+        players_pair_2_ids=(body.side2.player1_id, body.side2.player2_id,),
+        players_pair_1_score=body.side1.match_score,
+        players_pair_2_score=body.side2.match_score,
     )
     log.info(f"Create new Match with id={match_entity.id}")
 
@@ -49,6 +49,10 @@ async def register_match(register_body: RegisterMatchRequest):
 
 @router.get("", response_model=List[MatchResponse], status_code=status.HTTP_200_OK)
 async def get_all_matches_for_player(player_id: int, start_date: datetime | None = datetime.min, end_date: datetime | None = datetime.max):
+    if start_date > end_date:
+        log.info(f"Request start_date={start_date} after end_date={end_date}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Start date must be before (or equals with) End date")
+
     if not db.players.is_player_exists(player_id):
         log.info(f"Player with id={player_id} doesn't exists")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No such Player")

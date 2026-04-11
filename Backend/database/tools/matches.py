@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import and_, desc, exists, or_, select
 
 
-log = settings.ProjectLoggerFactory.get_for("database.match")
+log = settings.ProjectLoggerFactory.get_for("database.matches")
 
 
 def _get_or_create_players_pair(session: Session, player1_id: int, player2_id: int) -> PlayersPair:
@@ -103,5 +103,4 @@ def get_all_matches_for_player_by_period(player_id: int, start_date: datetime, e
                 ),
             )
         ).order_by(desc(Match.played_at))
-        matches = session.execute(stmt).scalars().all()
-        return matches
+        return session.execute(stmt).scalars().all()
