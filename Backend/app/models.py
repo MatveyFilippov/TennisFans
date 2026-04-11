@@ -21,6 +21,38 @@ class PlayerResponse(BaseModel):
         )
 
 
+class TourResponse(BaseModel):
+    id: int
+    name: str
+    started_at: datetime
+    ended_at: Optional[datetime]
+
+    @classmethod
+    def of(
+            cls, tour_entity: db_entities.Tour
+    ) -> 'TourResponse':
+        return TourResponse(
+            id=tour_entity.id,
+            name=tour_entity.name,
+            started_at=localize_datetime(tour_entity.started_at),
+            ended_at=localize_datetime(tour_entity.ended_at) if tour_entity.ended_at is not None else None,
+        )
+
+
+class TourPlayerPointsResponse(BaseModel):
+    player: PlayerResponse
+    player_tour_points: float
+
+    @classmethod
+    def of(
+            cls, player_entity: db_entities.Player, player_tour_points: float
+    ) -> 'TourPlayerPointsResponse':
+        return TourPlayerPointsResponse(
+            player=PlayerResponse.of(player_entity),
+            player_tour_points=player_tour_points,
+        )
+
+
 class PlayersPairResponse(BaseModel):
     player1: PlayerResponse
     player2: PlayerResponse
@@ -68,6 +100,16 @@ class MatchResponse(BaseModel):
 class CreatePlayerRequest(BaseModel):
     name: str
     registered_at: Optional[datetime] = None
+
+
+class StartTourRequest(BaseModel):
+    name: str
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+
+
+class EndTourRequest(BaseModel):
+    ended_at: datetime
 
 
 class RegisterMatchRequest(BaseModel):

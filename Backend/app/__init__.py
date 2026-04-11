@@ -5,6 +5,9 @@ def start():
     from .players import router as players_router
     APP.include_router(players_router)
     log.debug(f"Register {players_router.prefix}")
+    from .tours import router as tours_router
+    APP.include_router(tours_router)
+    log.debug(f"Register {tours_router.prefix}")
     from .matches import router as matches_router
     APP.include_router(matches_router)
     log.debug(f"Register {matches_router.prefix}")

@@ -48,6 +48,19 @@ class Player(EntityBase):
     )
 
 
+class Tour(EntityBase):
+    __tablename__ = "tours"
+
+    id = Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
+    name = Column(sqlalchemy.Text, nullable=False)
+    started_at = Column(DateTimeUTC, nullable=False, default=lambda: datetime.now(UTC_TIMEZONE))
+    ended_at = Column(DateTimeUTC, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("ended_at IS NULL OR started_at < ended_at", name="check_tour_started_before_ended"),
+    )
+
+
 class PlayersPair(EntityBase):
     __tablename__ = "player_pairs"
 
