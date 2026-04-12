@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script type="module" src="scripts/js/main.js" defer></script>
+    <title>Рейтинг</title>
+    <meta name="title" content="TennisFans">
+    <meta name="description" content="Система управления теннисным рейтингом. Отслеживайте результаты, регистрируйте матчи и следите за рейтингом игроков.">
+    <meta name="keywords" content="большой теннис, турнир, рейтинг, матчи">
+    <meta name="author" content="homer">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+</head>
+<body>
+<div class="page">
+    <header class="header">
+        <div class="header__container">
+            <div class="logo">
+                <img src="assets/images/logo.svg" alt="TennisFans" class="logo__image" width="40" height="40">
+                <span class="logo__text">TennisFans</span>
+            </div>
+            <a href="/admin" class="admin-link">
+                <span>Управление</span>
+            </a>
+        </div>
+    </header>
+    <main class="main">
+        <div class="container">
+            <section class="tournament">
+                <div class="tournament__header">
+                    <h1 class="tournament__title">Турнирная таблица</h1>
+                    <div class="tournament__selector">
+                        <select id="tourSelect" class="select select--tour">
+                            <option value="">Загрузка туров...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card card--tournament">
+                    <div id="tournamentBoard" class="leaderboard">
+                        <div class="leaderboard__loading">Загрузка данных...</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <p class="footer__text">designed by homer</p>
+        </div>
+    </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <link rel="stylesheet" href="styles/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script type="module" src="scripts/js/admin.js" defer></script>
+    <title>Панель управления</title>
+    <meta name="title" content="TennisFans — Панель управления">
+    <meta name="description" content="Панель управления теннисными турнирами. Регистрируйте матчи и добавляйте игроков.">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+</head>
+<body>
+<div class="page">
+    <header class="header">
+        <div class="header__container">
+            <div class="logo">
+                <a href="index.html" class="logo__link">
+                    <img src="assets/images/logo.svg" alt="TennisFans" class="logo__image" width="40" height="40">
+                    <span class="logo__text">TennisFans</span>
+                </a>
+            </div>
+            <a href="index.html" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M15 10H5M5 10L8 7M5 10L8 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Назад к таблице</span>
+            </a>
+        </div>
+    </header>
+    <main class="main">
+        <div class="container">
+            <h1 class="page-title">Панель управления</h1>
+            <div class="tabs">
+                <button class="tab tab--active" data-tab="match">Регистрация матча</button>
+                <button class="tab" data-tab="tour">Новый тур</button>
+                <button class="tab" data-tab="player">Добавить игрока</button>
+            </div>
+            <div id="tab-match" class="tab-content tab-content--active">
+                <div class="card card--form">
+                    <form id="matchForm" class="form">
+                        <div class="form__section">
+                            <h2 class="form__section-title">Первая пара</h2>
+                            <div class="form__row">
+                                <div class="form__field">
+                                    <label for="side1Player1" class="form__label">Первый игрок</label>
+                                    <select id="side1Player1" class="select" required>
+                                        <option value="">Выберите игрока</option>
+                                    </select>
+                                </div>
+                                <div class="form__field">
+                                    <label for="side1Player2" class="form__label">Второй игрок</label>
+                                    <select id="side1Player2" class="select" required>
+                                        <option value="">Выберите игрока</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form__field">
+                                <label for="side1Score" class="form__label">Счёт пары</label>
+                                <input type="number" id="side1Score" class="input" min="0" required placeholder="Количество выигранных геймов">
+                            </div>
+                        </div>
+                        <div class="form__section">
+                            <h2 class="form__section-title">Вторая пара</h2>
+                            <div class="form__row">
+                                <div class="form__field">
+                                    <label for="side2Player1" class="form__label">Первый игрок</label>
+                                    <select id="side2Player1" class="select" required>
+                                        <option value="">Выберите игрока</option>
+                                    </select>
+                                </div>
+                                <div class="form__field">
+                                    <label for="side2Player2" class="form__label">Второй игрок</label>
+                                    <select id="side2Player2" class="select" required>
+                                        <option value="">Выберите игрока</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form__field">
+                                <label for="side2Score" class="form__label">Счёт пары</label>
+                                <input type="number" id="side2Score" class="input" min="0" required placeholder="Количество выигранных геймов">
+                            </div>
+                        </div>
+                        <div class="form__section">
+                            <h2 class="form__section-title">Время проведения</h2>
+                            <div class="form__row form__row--datetime">
+                                <div class="form__field">
+                                    <label for="matchDate" class="form__label">Дата</label>
+                                    <input type="date" id="matchDate" class="input" required>
+                                </div>
+                                <div class="form__field">
+                                    <label for="matchTime" class="form__label">Время</label>
+                                    <input type="time" id="matchTime" class="input" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form__actions">
+                            <button type="submit" class="button button--primary">
+                                <span>Зарегистрировать матч</span>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <path d="M4 10H16M10 4V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div id="tab-tour" class="tab-content">
+                <div class="card card--form">
+                    <form id="tourForm" class="form">
+                        <div class="form__section">
+                            <h2 class="form__section-title">Новый турнир</h2>
+                            <div class="form__field">
+                                <label for="tourName" class="form__label">Название тура</label>
+                                <input type="text" id="tourName" class="input" required placeholder="Например: Весенний кубок 2024">
+                            </div>
+                        </div>
+                        <div class="form__actions">
+                            <button type="submit" class="button button--primary">
+                                <span>Создать тур</span>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <path d="M4 10H16M10 4V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div id="tab-player" class="tab-content">
+                <div class="card card--form">
+                    <form id="playerForm" class="form">
+                        <div class="form__section">
+                            <h2 class="form__section-title">Новый игрок</h2>
+                            <div class="form__field">
+                                <label for="playerName" class="form__label">Имя и фамилия</label>
+                                <input type="text" id="playerName" class="input" required placeholder="Иван Петров">
+                            </div>
+                        </div>
+                        <div class="form__actions">
+                            <button type="submit" class="button button--primary">
+                                <span>Добавить игрока</span>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <path d="M4 10H16M10 4V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="players-section">
+                <h2 class="players-section__title">Список игроков</h2>
+                <div class="card card--players">
+                    <div id="playersList" class="players-list">
+                        <div class="players-list__loading">Загрузка...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div id="toastContainer" class="toast-container"></div>
+</div>
+</body>
+</html>
