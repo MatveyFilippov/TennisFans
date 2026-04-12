@@ -81,8 +81,7 @@ class AdminApp {
             this.playersList.innerHTML = '<div class="players-list__loading">Нет зарегистрированных игроков</div>';
             return;
         }
-        const sortedPlayers = [...this.players].sort((a, b) => a.name.localeCompare(b.name));
-        this.playersList.innerHTML = sortedPlayers.map((player, index) => `
+        this.playersList.innerHTML = this.players.map((player, index) => `
             <div class="players-list__item">
                 <span class="players-list__number">${index + 1}</span>
                 <span class="players-list__name">${this.escapeHtml(player.name)}</span>

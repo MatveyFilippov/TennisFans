@@ -212,18 +212,6 @@ body {
     color: var(--color-text-light);
 }
 
-.leaderboard__header {
-    display: grid;
-    grid-template-columns: 60px 1fr 100px;
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 2px solid var(--color-border);
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-text-light);
-}
-
 .leaderboard__row {
     display: grid;
     grid-template-columns: 60px 1fr 100px;

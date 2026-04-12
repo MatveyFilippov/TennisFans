@@ -71,29 +71,20 @@ export class TournamentBoard {
 
     private renderLeaderboard(data: TourPlayerPointsResponse[]) {
         if (data.length === 0) {
-            this.renderEmptyState('В этом туре пока нет данных');
+            this.renderEmptyState('В этом туре пока не сыграно ни одного матча');
             return;
         }
 
-        const sortedData = [...data].sort((a, b) => b.player_tour_points - a.player_tour_points);
-
-        const html = `
-            <div class="leaderboard__header">
-                <span>Место</span>
-                <span>Игрок</span>
-                <span>Очки</span>
-            </div>
-            ${sortedData.map((item, index) => {
-                const rankClass = index < 3 ? 'leaderboard__rank--top' : '';
-                return `
-                    <div class="leaderboard__row">
-                        <span class="leaderboard__rank ${rankClass}">${index + 1}</span>
-                        <span class="leaderboard__name">${this.escapeHtml(item.player.name)}</span>
-                        <span class="leaderboard__points">${item.player_tour_points}</span>
-                    </div>
-                `;
-            }).join('')}
-        `;
+        const html = data.map((item, index) => {
+            const rankClass = index < 3 ? 'leaderboard__rank--top' : '';
+            return `
+                <div class="leaderboard__row">
+                    <span class="leaderboard__rank ${rankClass}">${index + 1}</span>
+                    <span class="leaderboard__name">${this.escapeHtml(item.player.name)}</span>
+                    <span class="leaderboard__points">${item.player_tour_points}</span>
+                </div>
+            `;
+        }).join('');
 
         this.container.innerHTML = html;
     }
