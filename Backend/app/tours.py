@@ -1,5 +1,6 @@
 from .models import *
 import database.tools as db
+from utils.players_pair_utils import find_optimal_players_pairs
 import settings
 from datetime import datetime
 from typing import List
@@ -65,6 +66,46 @@ async def get_tour_players_points(tour_id: int):
     return [
         TourPlayerPointsResponse.of(player_entity=player_entity, player_tour_points=player_tour_points)
         for player_entity, player_tour_points in tour_player_entities_points.items()
+    ]
+
+
+@router.get("/{tour_id}/propose_players_pairs", response_model=List[PlayersPairResponse], status_code=status.HTTP_200_OK)
+async def propose_players_pairs(tour_id: int):
+    if not db.tours.is_tour_exists(tour_id):
+        log.info(f"Tour with id={tour_id} doesn't exists")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such Tour")
+
+    tour_entity = db.tours.get_tour(tour_id=tour_id)
+    log.info(f"Get Tour with id={tour_entity.id}")
+
+    if tour_entity.ended_at is not None:
+        log.info(f"Tour with id={tour_entity.id} already ended")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Can't propose pairs for ended Tour")
+
+    players_id_entity = {
+        player.id: player
+        for player in db.players.get_all_players()
+    }
+    log.info(f"Get all Players")
+
+    if len(players_id_entity) % 2 != 0:
+        log.info("Players number is not even")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Can't propose pairs for not even quantity of Players")
+
+    player_ids_pair_last_play = {
+        (players_pair[0].id, players_pair[1].id): last_play
+        for players_pair, last_play in db.matches.get_players_pair_last_play(tour_id=tour_entity.id).items()
+    }
+    log.info(f"Get all PlayersPairs last play for Tour with id={tour_entity.id}")
+
+    optimal_players_pairs = find_optimal_players_pairs(
+        all_player_ids=set(players_id_entity.keys()), players_pair_last_play=player_ids_pair_last_play
+    )
+    log.info(f"Compute optimal PlayersPairs for Tour with id={tour_entity.id}")
+
+    return [
+        PlayersPairResponse.of(player1_entity=players_id_entity[player1_id], player2_entity=players_id_entity[player2_id])
+        for player1_id, player2_id in optimal_players_pairs
     ]
 
 

@@ -1,4 +1,4 @@
-import database.base.entities as db_entities
+import database.base as db_entities
 from utils.datetime_utils import localize_datetime
 from datetime import datetime
 from pydantic import BaseModel

@@ -1,4 +1,5 @@
 from .players import _get_player
+from .tours import _get_tour
 from ..base import Player, PlayersPair, Match, Session
 from utils.datetime_utils import utc_datetime
 import settings
@@ -32,6 +33,31 @@ def get_pair_players(players_pair_id: int) -> tuple[Player, Player]:
         player1 = _get_player(session=session, player_id=players_pair.player1_id)
         player2 = _get_player(session=session, player_id=players_pair.player2_id)
         return player1, player2
+
+
+def get_players_pair_last_play(tour_id: int) -> dict[tuple[Player, Player], datetime]:
+    with Session() as session:
+        tour = _get_tour(session=session, tour_id=tour_id)
+
+        log.debug(f"Reading all Matches in Tour[id={tour.id}]")
+        matches_query = select(Match).where(
+            and_(
+                Match.played_at >= tour.started_at,
+                Match.played_at <= tour.ended_at if tour.ended_at else True
+            )
+        )
+        matches = session.execute(matches_query).scalars().all()
+
+        pair_history = {}
+        for match in matches:
+            log.debug(f"Reading Players from Match[id={match.id}]")
+            pair1 = get_pair_players(match.players_pair_id_1)
+            pair2 = get_pair_players(match.players_pair_id_2)
+            for players_pair in [pair1, pair2]:
+                if players_pair not in pair_history or match.played_at > pair_history[players_pair]:
+                    pair_history[players_pair] = match.played_at
+
+        return pair_history
 
 
 def is_match_exists(match_id: int) -> bool:
