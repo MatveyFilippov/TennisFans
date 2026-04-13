@@ -27,4 +27,7 @@ export const toursApi = {
     async getPlayersPoints(tourId) {
         return apiClient.get(`/tours/${tourId}/players_points`);
     },
+    async getProposedPairs(tourId) {
+        return apiClient.get(`/tours/${tourId}/propose_players_pairs`);
+    },
 };

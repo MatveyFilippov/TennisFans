@@ -1,0 +1,96 @@
+@import 'global.css';
+
+/* Tournament Section */
+.tournament {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.tournament__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.tournament__title {
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--color-primary);
+    letter-spacing: -0.02em;
+}
+
+.tournament__selector {
+    min-width: 240px;
+}
+
+/* Card */
+.card--tournament {
+    padding: var(--spacing-xl);
+}
+
+/* Leaderboard */
+.leaderboard__loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-light);
+}
+
+.leaderboard__row {
+    display: grid;
+    grid-template-columns: 60px 1fr 100px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    transition: var(--transition);
+    align-items: center;
+}
+
+.leaderboard__row:last-child {
+    border-bottom: none;
+}
+
+.leaderboard__row:hover {
+    background: var(--color-background);
+}
+
+.leaderboard__rank {
+    font-weight: 500;
+    color: var(--color-secondary);
+}
+
+.leaderboard__rank--top {
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+.leaderboard__name {
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.leaderboard__points {
+    font-weight: 600;
+    color: var(--color-success);
+    text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tournament__title {
+        font-size: 24px;
+    }
+
+    .tournament__selector {
+        min-width: 100%;
+    }
+
+    .card--tournament {
+        padding: var(--spacing-lg);
+    }
+
+    .leaderboard__header, .leaderboard__row {
+        grid-template-columns: 40px 1fr 80px;
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 14px;
+    }
+}

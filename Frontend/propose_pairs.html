@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <link rel="stylesheet" href="styles/propose_pairs.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script type="module" src="scripts/js/propose_pairs.js" defer></script>
+    <title>Предложение пар игроков</title>
+    <meta name="title" content="TennisFans — Предложенные пары игроков">
+    <meta name="description" content="Алгоритмически подобранные пары игроков для теннисных матчей. Оптимальное распределение по дате последней игры.">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+</head>
+<body>
+    <div class="page">
+        <header class="header">
+            <div class="header__container">
+                <a href="/" class="logo__link">
+                    <div class="logo">
+                        <img src="assets/images/logo.svg" alt="TennisFans" class="logo__image" width="40" height="40">
+                        <span class="logo__text">TennisFans</span>
+                    </div>
+                </a>
+                <nav class="nav">
+                    <a href="/" class="nav__link">Рейтинг</a>
+                    <a href="/propose_pairs" class="nav__link nav__link--active">Предложение пар</a>
+                    <a href="/admin" class="nav__link">Управление</a>
+                </nav>
+            </div>
+        </header>
+        <main class="main">
+            <div class="container">
+                <div class="page-header">
+                    <h1 class="page-title">Предложенные пары</h1>
+                    <p class="page-description">Подбор пары игроков по дате последнего матча</p>
+                </div>
+                <div class="tour-selector card">
+                    <label for="tourSelect" class="tour-selector__label">Выберите активный тур</label>
+                    <select id="tourSelect" class="select select--large">
+                        <option value="">Загрузка туров...</option>
+                    </select>
+                </div>
+                <div id="pairsContainer" class="pairs-container">
+                    <div class="pairs-loading">
+                        <div class="pairs-loading__spinner"></div>
+                        <p>Загрузка предложенных пар...</p>
+                    </div>
+                </div>
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <h3 class="empty-state__title">Нет предложенных пар</h3>
+                    <p class="empty-state__text">Для этого тура пока нет предложенных пар игроков</p>
+                </div>
+            </div>
+        </main>
+        <footer class="footer">
+            <div class="container">
+                <p class="footer__text">designed by homer</p>
+            </div>
+        </footer>
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+</body>
+</html>

@@ -1,4 +1,4 @@
-@import 'main.css';
+@import 'global.css';
 
 /* Page Title */
 .page-title {
@@ -169,33 +169,6 @@
     transform: translateY(0);
 }
 
-/* Back Link */
-.back-link {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    color: var(--color-text-light);
-    text-decoration: none;
-    border-radius: var(--radius-md);
-    transition: var(--transition);
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.back-link:hover {
-    background: var(--color-background);
-    color: var(--color-primary);
-}
-
-.logo__link {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    text-decoration: none;
-    color: inherit;
-}
-
 /* Players Section */
 .players-section {
     max-width: 700px;
@@ -256,42 +229,6 @@
     color: var(--color-text-light);
 }
 
-/* Toast */
-.toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-}
-
-.toast {
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-radius: var(--radius-md);
-    font-size: 14px;
-    font-weight: 500;
-    animation: slideIn 0.3s ease;
-    box-shadow: var(--shadow-lg);
-    min-width: 280px;
-}
-
-.toast--success {
-    background: var(--color-success);
-    color: white;
-}
-
-.toast--error {
-    background: #e74c3c;
-    color: white;
-}
-
-.toast--info {
-    background: var(--color-primary);
-    color: white;
-}
-
 @keyframes slideIn {
     from {
         transform: translateX(100%);
@@ -341,10 +278,6 @@
 @media (max-width: 480px) {
     .page-title {
         font-size: 24px;
-    }
-
-    .back-link span {
-        display: none;
     }
 
     .card--form {

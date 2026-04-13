@@ -12,10 +12,7 @@ export class TournamentBoard {
     }
     async loadTours() {
         try {
-            this.tours = await toursApi.getNotEnded();
-            if (this.tours.length === 0) {
-                this.tours = await toursApi.getAll();
-            }
+            this.tours = await toursApi.getAll();
             this.renderTourOptions();
             if (this.tours.length > 0) {
                 const latestTour = this.tours.reduce((latest, tour) => tour.id > latest.id ? tour : latest);

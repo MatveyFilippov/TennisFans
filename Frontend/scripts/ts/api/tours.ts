@@ -1,5 +1,5 @@
 import { apiClient } from './client.js';
-import { TourResponse, StartTourRequest, EndTourRequest, TourPlayerPointsResponse } from '../types/index.js';
+import { TourResponse, StartTourRequest, EndTourRequest, TourPlayerPointsResponse, PlayersPairResponse } from '../types/index.js';
 
 export const toursApi = {
     async getAll(): Promise<TourResponse[]> {
@@ -32,5 +32,9 @@ export const toursApi = {
 
     async getPlayersPoints(tourId: number): Promise<TourPlayerPointsResponse[]> {
         return apiClient.get<TourPlayerPointsResponse[]>(`/tours/${tourId}/players_points`);
+    },
+
+    async getProposedPairs(tourId: number): Promise<PlayersPairResponse[]> {
+        return apiClient.get<PlayersPairResponse[]>(`/tours/${tourId}/propose_players_pairs`);
     },
 };
