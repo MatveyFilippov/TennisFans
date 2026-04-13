@@ -1,8 +1,8 @@
 from ..base import Player, Tour, PlayersPair, Match, Session
-from utils.datetime_utils import utc_datetime
+from utils.datetime_utils import utc_datetime, UTC_TIMEZONE
 import settings
 from datetime import datetime
-from sqlalchemy import and_, desc, exists, select
+from sqlalchemy import and_, desc, exists, or_, select
 
 
 log = settings.ProjectLoggerFactory.get_for("database.tours")
@@ -73,10 +73,14 @@ def get_all_tours() -> list[Tour]:
 
 
 def get_all_not_ended_tours() -> list[Tour]:
+    dt_now = datetime.now(tz=UTC_TIMEZONE)
     with Session() as session:
         log.debug("Reading all not ended Tours")
         stmt = select(Tour).where(
-            Tour.ended_at == None
+            or_(
+                Tour.ended_at == None,
+                Tour.ended_at < dt_now,
+            )
         ).order_by(desc(Tour.started_at))
         return session.execute(stmt).scalars().all()
 

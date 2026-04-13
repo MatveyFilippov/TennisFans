@@ -1,5 +1,6 @@
 from .models import *
 import database.tools as db
+from utils.datetime_utils import localize_datetime
 from utils.players_pair_utils import find_optimal_players_pairs
 import settings
 from datetime import datetime
@@ -78,7 +79,7 @@ async def propose_players_pairs(tour_id: int):
     tour_entity = db.tours.get_tour(tour_id=tour_id)
     log.info(f"Get Tour with id={tour_entity.id}")
 
-    if tour_entity.ended_at is not None:
+    if tour_entity.ended_at is not None and tour_entity.ended_at <= datetime.now(settings.BACKEND_TIMEZONE):
         log.info(f"Tour with id={tour_entity.id} already ended")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Can't propose pairs for ended Tour")
 
@@ -109,20 +110,22 @@ async def propose_players_pairs(tour_id: int):
     ]
 
 
-@router.put("/{tour_id}/end", response_model=TourResponse, status_code=status.HTTP_200_OK)
+@router.put("/{tour_id}/ended_at", response_model=TourResponse, status_code=status.HTTP_200_OK)
 async def end_tour(tour_id: int, body: Optional[EndTourRequest] = None):
     if not db.tours.is_tour_exists(tour_id):
         log.info(f"Tour with id={tour_id} doesn't exists")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such Tour")
+    if body is None:
+        body = EndTourRequest(ended_at=datetime.now(settings.BACKEND_TIMEZONE))
 
     tour_entity = db.tours.get_tour(tour_id=tour_id)
     log.info(f"Get Tour with id={tour_entity.id}")
     if tour_entity.ended_at is not None:
-        log.info(f"Tour with id={tour_id} already ended")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Tour already ended")
-    if body is None:
-        body = EndTourRequest(ended_at=datetime.now(settings.BACKEND_TIMEZONE))
-    elif tour_entity.started_at >= body.ended_at:
+        log.info(f"Tour with id={tour_id} already has ended_at")
+        if localize_datetime(tour_entity.ended_at) == body.ended_at:
+            return TourResponse.of(tour_entity=tour_entity)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Tour already has ended_at")
+    if tour_entity.started_at >= body.ended_at:
         log.info(f"Tour started_at={body.started_at} after (or equals with) ended_at={body.ended_at}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tour must ends after starts")
 
