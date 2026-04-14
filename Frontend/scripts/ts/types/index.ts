@@ -7,7 +7,15 @@ export interface PlayerResponse {
 
 export interface CreatePlayerRequest {
     name: string;
-    registered_at?: string | null;
+}
+
+export interface EditPlayerRequest {
+    name?: string | null;
+}
+
+export interface PlayersPairResponse {
+    player1: PlayerResponse;
+    player2: PlayerResponse;
 }
 
 // Tour Types
@@ -18,14 +26,16 @@ export interface TourResponse {
     ended_at: string | null;
 }
 
-export interface StartTourRequest {
+export interface CreateTourRequest {
     name: string;
     started_at?: string | null;
     ended_at?: string | null;
 }
 
-export interface EndTourRequest {
-    ended_at: string;
+export interface EditTourRequest {
+    name?: string | null;
+    started_at?: string | null;
+    ended_at?: string | null;
 }
 
 export interface TourPlayerPointsResponse {
@@ -33,12 +43,12 @@ export interface TourPlayerPointsResponse {
     player_tour_points: number;
 }
 
-// Match Types
-export interface PlayersPairResponse {
-    player1: PlayerResponse;
-    player2: PlayerResponse;
+export interface TourPlayersPairProposeResponse {
+    players_pair: PlayersPairResponse;
+    last_played_at: string | null;
 }
 
+// Match Types
 export interface MatchResponse {
     id: number;
     played_at: string;

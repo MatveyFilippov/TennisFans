@@ -1,40 +1,40 @@
 import { apiClient } from './client.js';
-import { TourResponse, StartTourRequest, EndTourRequest, TourPlayerPointsResponse, PlayersPairResponse } from '../types/index.js';
+import { TourResponse, CreateTourRequest, EditTourRequest, TourPlayerPointsResponse, TourPlayersPairProposeResponse } from '../types/index.js';
 
 export const toursApi = {
-    async getAll(): Promise<TourResponse[]> {
-        return apiClient.get<TourResponse[]>('/tours');
+    async getAll(startedAfter?: string, endedBefore?: string): Promise<TourResponse[]> {
+        const params = new URLSearchParams();
+        if (startedAfter) params.append('started_after', startedAfter);
+        if (endedBefore) params.append('ended_before', endedBefore);
+        const query = params.toString();
+        return apiClient.get<TourResponse[]>(`/tours${query ? `?${query}` : ''}`);
     },
 
     async getNotEnded(): Promise<TourResponse[]> {
         return apiClient.get<TourResponse[]>('/tours/not_ended');
     },
 
-    async getEnded(startDate?: string, endDate?: string): Promise<TourResponse[]> {
-        const params = new URLSearchParams();
-        if (startDate) params.append('start_date', startDate);
-        if (endDate) params.append('end_date', endDate);
-        const query = params.toString();
-        return apiClient.get<TourResponse[]>(`/tours/ended${query ? `?${query}` : ''}`);
-    },
-
     async getById(tourId: number): Promise<TourResponse> {
         return apiClient.get<TourResponse>(`/tours/${tourId}`);
     },
 
-    async start(data: StartTourRequest): Promise<TourResponse> {
+    async create(data: CreateTourRequest): Promise<TourResponse> {
         return apiClient.post<TourResponse>('/tours', data);
     },
 
-    async end(tourId: number, data: EndTourRequest): Promise<TourResponse> {
-        return apiClient.put<TourResponse>(`/tours/${tourId}/end`, data);
+    async edit(tourId: number, data: EditTourRequest): Promise<TourResponse> {
+        return apiClient.patch<TourResponse>(`/tours/${tourId}`, data);
     },
-
+    
+    async delete(tourId: number): Promise<void> {
+        return apiClient.delete<void>(`/tours/${tourId}`);
+    },
+    
     async getPlayersPoints(tourId: number): Promise<TourPlayerPointsResponse[]> {
         return apiClient.get<TourPlayerPointsResponse[]>(`/tours/${tourId}/players_points`);
     },
 
-    async getProposedPairs(tourId: number): Promise<PlayersPairResponse[]> {
-        return apiClient.get<PlayersPairResponse[]>(`/tours/${tourId}/propose_players_pairs`);
+    async getProposedPairs(tourId: number): Promise<TourPlayersPairProposeResponse[]> {
+        return apiClient.get<TourPlayersPairProposeResponse[]>(`/tours/${tourId}/propose_players_pairs`);
     },
 };

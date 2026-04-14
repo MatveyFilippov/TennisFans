@@ -1,7 +1,7 @@
 import { playersApi } from './api/players.js';
 import { toursApi } from './api/tours.js';
 import { matchesApi } from './api/matches.js';
-import { PlayerResponse, RegisterMatchRequest, StartTourRequest, CreatePlayerRequest } from './types/index.js';
+import { PlayerResponse, RegisterMatchRequest, CreateTourRequest, CreatePlayerRequest } from './types/index.js';
 
 class AdminApp {
     private players: PlayerResponse[] = [];
@@ -221,12 +221,11 @@ class AdminApp {
                 return;
             }
 
-            const tourData: StartTourRequest = {
-                name: tourName,
-                started_at: new Date().toISOString()
+            const tourData: CreateTourRequest = {
+                name: tourName
             };
 
-            await toursApi.start(tourData);
+            await toursApi.create(tourData);
             this.showToast('Тур успешно создан', 'success');
             this.tourForm.reset();
         } catch (error) {
@@ -247,8 +246,7 @@ class AdminApp {
             }
 
             const playerData: CreatePlayerRequest = {
-                name: playerName,
-                registered_at: new Date().toISOString()
+                name: playerName
             };
 
             await playersApi.create(playerData);

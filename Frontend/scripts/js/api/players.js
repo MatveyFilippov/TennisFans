@@ -9,4 +9,10 @@ export const playersApi = {
     async create(data) {
         return apiClient.post('/players', data);
     },
+    async edit(playerId, data) {
+        return apiClient.patch(`/players/${playerId}`, data);
+    },
+    async delete(playerId) {
+        return apiClient.delete(`/players/${playerId}`);
+    },
 };

@@ -1,28 +1,28 @@
 import { apiClient } from './client.js';
 export const toursApi = {
-    async getAll() {
-        return apiClient.get('/tours');
+    async getAll(startedAfter, endedBefore) {
+        const params = new URLSearchParams();
+        if (startedAfter)
+            params.append('started_after', startedAfter);
+        if (endedBefore)
+            params.append('ended_before', endedBefore);
+        const query = params.toString();
+        return apiClient.get(`/tours${query ? `?${query}` : ''}`);
     },
     async getNotEnded() {
         return apiClient.get('/tours/not_ended');
     },
-    async getEnded(startDate, endDate) {
-        const params = new URLSearchParams();
-        if (startDate)
-            params.append('start_date', startDate);
-        if (endDate)
-            params.append('end_date', endDate);
-        const query = params.toString();
-        return apiClient.get(`/tours/ended${query ? `?${query}` : ''}`);
-    },
     async getById(tourId) {
         return apiClient.get(`/tours/${tourId}`);
     },
-    async start(data) {
+    async create(data) {
         return apiClient.post('/tours', data);
     },
-    async end(tourId, data) {
-        return apiClient.put(`/tours/${tourId}/end`, data);
+    async edit(tourId, data) {
+        return apiClient.patch(`/tours/${tourId}`, data);
+    },
+    async delete(tourId) {
+        return apiClient.delete(`/tours/${tourId}`);
     },
     async getPlayersPoints(tourId) {
         return apiClient.get(`/tours/${tourId}/players_points`);

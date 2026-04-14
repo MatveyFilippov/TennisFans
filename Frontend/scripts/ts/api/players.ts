@@ -1,5 +1,5 @@
 import { apiClient } from './client.js';
-import { PlayerResponse, CreatePlayerRequest } from '../types/index.js';
+import { PlayerResponse, CreatePlayerRequest, EditPlayerRequest } from '../types/index.js';
 
 export const playersApi = {
     async getAll(): Promise<PlayerResponse[]> {
@@ -12,5 +12,13 @@ export const playersApi = {
 
     async create(data: CreatePlayerRequest): Promise<PlayerResponse> {
         return apiClient.post<PlayerResponse>('/players', data);
+    },
+    
+    async edit(playerId: number, data: EditPlayerRequest): Promise<PlayerResponse> {
+        return apiClient.patch<PlayerResponse>(`/players/${playerId}`, data);
+    },
+    
+    async delete(playerId: number): Promise<void> {
+        return apiClient.delete<void>(`/players/${playerId}`);
     },
 };

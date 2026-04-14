@@ -1,5 +1,5 @@
 import { toursApi } from './api/tours.js';
-import { TourResponse, PlayersPairResponse, PlayerResponse } from './types/index.js';
+import { TourResponse, TourPlayersPairProposeResponse, PlayerResponse } from './types/index.js';
 
 class PairsApp {
     private tourSelect: HTMLSelectElement;
@@ -8,7 +8,7 @@ class PairsApp {
     private toastContainer: HTMLElement;
 
     private activeTours: TourResponse[] = [];
-    private currentPairs: PlayersPairResponse[] = [];
+    private currentPairs: TourPlayersPairProposeResponse[] = [];
 
     constructor() {
         this.tourSelect = document.getElementById('tourSelect') as HTMLSelectElement;
@@ -87,22 +87,25 @@ class PairsApp {
         }
     }
 
-    private renderPairs(pairs: PlayersPairResponse[]) {
+    private renderPairs(pairs: TourPlayersPairProposeResponse[]) {
         this.emptyState.style.display = 'none';
 
         const html = pairs.map((pair, index) => this.renderPairCard(pair, index)).join('');
         this.pairsContainer.innerHTML = html;
     }
 
-    private renderPairCard(pair: PlayersPairResponse, index: number): string {
+    private renderPairCard(pair: TourPlayersPairProposeResponse, index: number): string {
+        const lastPlayedInfo = !pair.last_played_at ? 'Ранее не играли' : `Играли: ${this.formatRelativeTime(pair.last_played_at)}`;
+        
         return `
             <div class="pair-card">
                 <div class="pair-card__header">
                     <span class="pair-card__number">Пара #${index + 1}</span>
+                    <span class="pair-card__badge">${lastPlayedInfo}</span>
                 </div>
                 <div class="pair-card__players">
-                    ${this.renderPlayerItem(pair.player1)}
-                    ${this.renderPlayerItem(pair.player2)}
+                    ${this.renderPlayerItem(pair.players_pair.player1)}
+                    ${this.renderPlayerItem(pair.players_pair.player2)}
                 </div>
                 <div class="pair-card__footer">
                     <span class="pair-card__avg_points">Усреднённые очки: ${"TODO"}</span>
@@ -120,6 +123,19 @@ class PairsApp {
                 </div>
             </div>
         `;
+    }
+    
+    private formatRelativeTime(dateString: string): string {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 1) return 'сегодня';
+        if (diffDays < 7) return `${diffDays} дн. назад`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)} нед. назад`;
+        if (diffDays < 365) return `${Math.floor(diffDays / 30)} мес. назад`;
+        return `> ${Math.floor(diffDays / 365)} г. назад`;
     }
 
     private renderLoading() {

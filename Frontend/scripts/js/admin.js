@@ -171,10 +171,9 @@ class AdminApp {
                 return;
             }
             const tourData = {
-                name: tourName,
-                started_at: new Date().toISOString()
+                name: tourName
             };
-            await toursApi.start(tourData);
+            await toursApi.create(tourData);
             this.showToast('Тур успешно создан', 'success');
             this.tourForm.reset();
         }
@@ -192,8 +191,7 @@ class AdminApp {
                 return;
             }
             const playerData = {
-                name: playerName,
-                registered_at: new Date().toISOString()
+                name: playerName
             };
             await playersApi.create(playerData);
             this.showToast('Игрок успешно добавлен', 'success');

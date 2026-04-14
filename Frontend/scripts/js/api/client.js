@@ -1,4 +1,4 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 class ApiClient {
     async request(endpoint, options = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
@@ -40,6 +40,12 @@ class ApiClient {
     async put(endpoint, data) {
         return this.request(endpoint, {
             method: 'PUT',
+            body: data ? JSON.stringify(data) : undefined,
+        });
+    }
+    async patch(endpoint, data) {
+        return this.request(endpoint, {
+            method: 'PATCH',
             body: data ? JSON.stringify(data) : undefined,
         });
     }
