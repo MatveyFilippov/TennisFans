@@ -36,7 +36,7 @@ class DateTimeUTC(TypeDecorator):
         return "NULL" if value is None else f"'{utc_datetime(value)}'"
 
 
-class Player(EntityBase):
+class PlayerEntity(EntityBase):
     __tablename__ = "players"
 
     id = Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
@@ -48,7 +48,7 @@ class Player(EntityBase):
     )
 
 
-class Tour(EntityBase):
+class TourEntity(EntityBase):
     __tablename__ = "tours"
 
     id = Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
@@ -61,27 +61,27 @@ class Tour(EntityBase):
     )
 
 
-class PlayersPair(EntityBase):
-    __tablename__ = "player_pairs"
+class PlayersPairEntity(EntityBase):
+    __tablename__ = "players_pairs"
 
     id = Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
-    player1_id = Column(sqlalchemy.Integer, ForeignKey("players.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
-    player2_id = Column(sqlalchemy.Integer, ForeignKey("players.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
+    player1_id = Column(sqlalchemy.Integer, ForeignKey("players.id", onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
+    player2_id = Column(sqlalchemy.Integer, ForeignKey("players.id", onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
 
     __table_args__ = (
-        UniqueConstraint(player1_id, player2_id, name="uq_player_pairs_players_id"),
-        Index("idx_player_pairs_player1_id", player1_id),
-        Index("idx_player_pairs_player2_id", player2_id),
+        UniqueConstraint(player1_id, player2_id, name="uq_players_pairs_players_id"),
+        Index("idx_players_pairs_player1_id", player1_id),
+        Index("idx_players_pairs_player2_id", player2_id),
     )
 
 
-class Match(EntityBase):
+class MatchEntity(EntityBase):
     __tablename__ = "matches"
 
     id = Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     played_at = Column(DateTimeUTC, nullable=False, default=lambda: datetime.now(UTC_TIMEZONE))
-    players_pair_id_1 = Column(sqlalchemy.Integer, ForeignKey("player_pairs.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
-    players_pair_id_2 = Column(sqlalchemy.Integer, ForeignKey("player_pairs.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
+    players_pair_id_1 = Column(sqlalchemy.Integer, ForeignKey("players_pairs.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
+    players_pair_id_2 = Column(sqlalchemy.Integer, ForeignKey("players_pairs.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
     score_players_pair_1 = Column(sqlalchemy.Integer, nullable=False)
     score_players_pair_2 = Column(sqlalchemy.Integer, nullable=False)
 

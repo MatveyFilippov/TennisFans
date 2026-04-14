@@ -1,3 +1,4 @@
+from . import dto
 from datetime import datetime
 import settings
 from functools import lru_cache
@@ -7,20 +8,19 @@ import networkx as nx
 @lru_cache(maxsize=10_000)
 def __calculate_players_pair_weight(last_played: datetime | None, current_time: datetime) -> float:
     if last_played is None:
-        return 0.0
-    days_since_played = (current_time - last_played).total_seconds() / 86400
-    return (100.0 * (0.9 ** min(days_since_played, 30))) if days_since_played > 0 else float("inf")
+        return 1e9
+    return (current_time - last_played).days
 
 
-def find_optimal_players_pairs(all_player_ids: set[int], players_pair_last_play: dict[tuple[int, int], datetime]) -> list[tuple[int, int]]:
+def find_optimal_players_pairs(all_players_id_dto: dict[int, dto.PlayerDTO], players_pair_dto_last_play: dict[dto.PlayersPairDTO, datetime]) -> list[dto.PlayersPairDTO]:
+    all_player_ids = list(sorted(all_players_id_dto.keys()))
     if len(all_player_ids) % 2 != 0:
         raise ValueError("Quantity of players must be even")
 
     current_time = datetime.now(tz=settings.BACKEND_TIMEZONE)
-    all_player_ids = list(sorted(all_player_ids))
-    players_pair_last_play = {
-        tuple(sorted(players_ids_pair)): last_played
-        for players_ids_pair, last_played in players_pair_last_play.items()
+    player_ids_pair_last_play = {
+        tuple(sorted([players_pair_dto.player1_dto.id, players_pair_dto.player2_dto.id])): last_played
+        for players_pair_dto, last_played in players_pair_dto_last_play.items()
     }
 
     weighted_graph = nx.Graph()
@@ -28,9 +28,16 @@ def find_optimal_players_pairs(all_player_ids: set[int], players_pair_last_play:
 
     for i, player1_id in enumerate(all_player_ids):
         for player2_id in all_player_ids[i + 1:]:
-            last_played = players_pair_last_play.get((player1_id, player2_id))
+            last_played = player_ids_pair_last_play.get((player1_id, player2_id))
             weight = __calculate_players_pair_weight(last_played, current_time)
             weighted_graph.add_edge(player1_id, player2_id, weight=weight)
 
-    matching = nx.min_weight_matching(weighted_graph, weight="weight")
-    return [tuple(pair) for pair in matching]
+    matching = nx.max_weight_matching(weighted_graph, weight="weight", maxcardinality=True)
+    result = []
+    for player_ids_pair in matching:
+        player1_id, player2_id = sorted(player_ids_pair)
+        result.append(dto.PlayersPairDTO(
+            player1_dto=all_players_id_dto[player1_id],
+            player2_dto=all_players_id_dto[player2_id],
+        ))
+    return result

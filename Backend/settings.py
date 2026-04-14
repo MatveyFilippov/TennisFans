@@ -95,7 +95,7 @@ logging.Formatter.formatTime = (
 
 class ProjectLoggerFactory:
     PROJECT_PACKAGE = "ru.tennisfans"
-    logging.getLogger(PROJECT_PACKAGE).setLevel(logging.INFO)
+    logging.getLogger(PROJECT_PACKAGE).setLevel(logging.DEBUG)
 
     @classmethod
     def get_for(cls, module_name: str | None = "global") -> logging.Logger:

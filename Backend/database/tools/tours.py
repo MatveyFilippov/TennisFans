@@ -1,4 +1,6 @@
-from ..base import Player, Tour, PlayersPair, Match, Session
+from .players import _get_player_dto
+from ..base import Session, PlayerEntity, TourEntity, PlayersPairEntity, MatchEntity
+from utils import dto
 from utils.datetime_utils import utc_datetime, UTC_TIMEZONE
 import settings
 from datetime import datetime
@@ -8,11 +10,21 @@ from sqlalchemy import and_, desc, exists, or_, select
 log = settings.ProjectLoggerFactory.get_for("database.tours")
 
 
-def _get_tour(session: Session, tour_id: int) -> Tour:
+def _get_tour_dto(tour: TourEntity) -> dto.TourDTO:
+    log.debug(f"Exporting Tour[id={tour.id}] to TourDTO")
+    return dto.TourDTO(
+        id=tour.id,
+        name=tour.name,
+        started_at=tour.started_at,
+        ended_at=tour.ended_at,
+    )
+
+
+def _get_tour(session: Session, tour_id: int) -> TourEntity:
     log.debug(f"Reading Tour[id={tour_id}]")
-    tour = session.get(Tour, tour_id)
+    tour = session.get(TourEntity, tour_id)
     if not tour:
-        raise KeyError(f"No such Tour in database with ID {tour_id}")
+        raise KeyError(f"No such Tour with ID {tour_id}")
     return tour
 
 
@@ -20,95 +32,111 @@ def is_tour_exists(tour_id: int) -> bool:
     with Session() as session:
         log.debug(f"Checking if Tour[id={tour_id}] exists")
         return bool(session.query(
-            exists().where(Tour.id == tour_id)
+            exists().where(TourEntity.id == tour_id)
         ).scalar())
 
 
-def start_tour(name: str, started_at: datetime | None = None, ended_at: datetime | None = None) -> Tour:
+def create_tour(name: str, started_at: datetime | None = None, ended_at: datetime | None = None) -> dto.TourDTO:
     started_at = utc_datetime(started_at) if started_at else None
     ended_at = utc_datetime(ended_at) if ended_at else None
     with Session() as session:
-        log.debug("Starting new Tour")
-        new_tour = (
-            Tour(
-                name=name,
-                started_at=started_at,
-                ended_at=ended_at,
-            )
-            if started_at else
-            Tour(
-                name=name,
-                ended_at=ended_at,
-            )
+        log.debug("Creating new Tour")
+        new_tour = TourEntity(
+            name=name,
         )
+        if started_at is not None:
+            new_tour.started_at = started_at
+        if ended_at is not None:
+            new_tour.ended_at = ended_at
         session.add(new_tour)
         session.commit()
         session.refresh(new_tour)
-        log.debug(f"Start new Tour[id={new_tour.id}]")
-        return new_tour
+        log.debug(f"Create new Tour[id={new_tour.id}]")
+        return _get_tour_dto(tour=new_tour)
 
 
-def end_tour(tour_id: int, ended_at: datetime) -> Tour:
-    ended_at = utc_datetime(ended_at)
+def edit_tour(tour_id: int, name: str | None = None, started_at: datetime | None = None, ended_at: datetime | None = None) -> dto.TourDTO:
+    started_at = utc_datetime(started_at) if started_at else None
+    ended_at = utc_datetime(ended_at) if ended_at else None
     with Session() as session:
-        log.debug(f"Ending Tour[id={tour_id}]")
         tour = _get_tour(session=session, tour_id=tour_id)
-        if tour.ended_at is not None:
-            raise ValueError(f"Tour with ID {tour.ended_at} already ended")
-        tour.ended_at = ended_at
+
+        log.debug(f"Looking for changes in Tour[id={tour.id}]")
+        is_edit = False
+        if name is not None and tour.name != name:
+            tour.name = name
+            is_edit = True
+        if started_at is not None and tour.started_at != started_at:
+            tour.started_at = started_at
+            is_edit = True
+        if started_at is not None and tour.ended_at != ended_at:
+            tour.ended_at = ended_at
+            is_edit = True
+
+        if is_edit:
+            session.commit()
+            session.refresh(tour)
+            log.debug(f"Edit Tour[id={tour.id}]")
+        else:
+            log.debug(f"Don't edit Tour[id={tour.id}], already in target state")
+
+        return _get_tour_dto(tour=tour)
+
+
+def delete_tour(tour_id: int):
+    with Session() as session:
+        tour = _get_tour(session=session, tour_id=tour_id)
+        session.delete(tour)
         session.commit()
-        session.refresh(tour)
-        return tour
+        log.debug(f"Delete Tour[id={tour_id}]")
 
 
-def get_tour(tour_id: int) -> Tour:
+def get_tour(tour_id: int) -> dto.TourDTO:
     with Session() as session:
-        return _get_tour(session=session, tour_id=tour_id)
+        return _get_tour_dto(tour=_get_tour(session=session, tour_id=tour_id))
 
 
-def get_all_tours() -> list[Tour]:
-    with Session() as session:
-        log.debug("Reading all Tours")
-        return session.query(Tour).order_by(desc(Tour.started_at)).all()
-
-
-def get_all_not_ended_tours() -> list[Tour]:
+def get_all_not_ended_tours() -> list[dto.TourDTO]:
     dt_now = datetime.now(tz=UTC_TIMEZONE)
     with Session() as session:
         log.debug("Reading all not ended Tours")
-        stmt = select(Tour).where(
+        stmt = select(TourEntity).where(
             or_(
-                Tour.ended_at == None,
-                Tour.ended_at < dt_now,
+                TourEntity.ended_at == None,
+                TourEntity.ended_at < dt_now,
             )
-        ).order_by(desc(Tour.started_at))
-        return session.execute(stmt).scalars().all()
+        ).order_by(desc(TourEntity.started_at))
+        tours = session.execute(stmt).scalars().all()
+        return [_get_tour_dto(tour=tour) for tour in tours]
 
 
-def get_all_ended_tours_by_period(start_date: datetime, end_date: datetime) -> list[Tour]:
-    start_date = utc_datetime(start_date)
-    end_date = utc_datetime(end_date)
+def get_all_tours_by_period(started_after: datetime | None = None, ended_before: datetime | None = None) -> list[dto.TourDTO]:
+    started_after = utc_datetime(started_after or datetime.min)
+    ended_before = utc_datetime(ended_before or datetime.max)
     with Session() as session:
-        log.debug(f"Reading all ended Tours by period [{start_date.isoformat()};{end_date.isoformat()}]")
-        stmt = select(Tour).where(
+        log.debug(f"Reading all Tours by period [{started_after.isoformat()};{ended_before.isoformat()}]")
+        stmt = select(TourEntity).where(
             and_(
-                Tour.ended_at != None,
-                Tour.started_at >= start_date,
-                Tour.ended_at <= end_date,
+                TourEntity.started_at >= started_after,
+                or_(
+                    TourEntity.ended_at == None,
+                    TourEntity.ended_at <= ended_before,
+                ),
             )
-        ).order_by(desc(Tour.started_at))
-        return session.execute(stmt).scalars().all()
+        ).order_by(desc(TourEntity.started_at))
+        tours = session.execute(stmt).scalars().all()
+        return [_get_tour_dto(tour=tour) for tour in tours]
 
 
-def get_tour_players_points(tour_id: int) -> dict[Player, float]:
+def get_tour_players_points(tour_id: int) -> list[tuple[dto.PlayerDTO, float]]:
     with Session() as session:
         tour = _get_tour(session=session, tour_id=tour_id)
 
         log.debug(f"Reading all Matches in Tour[id={tour.id}]")
-        matches_query = select(Match).where(
+        matches_query = select(MatchEntity).where(
             and_(
-                Match.played_at >= tour.started_at,
-                Match.played_at <= tour.ended_at if tour.ended_at else True
+                MatchEntity.played_at >= tour.started_at,
+                MatchEntity.played_at <= tour.ended_at if tour.ended_at else True,
             )
         )
         matches = session.execute(matches_query).scalars().all()
@@ -118,10 +146,10 @@ def get_tour_players_points(tour_id: int) -> dict[Player, float]:
             pair_ids.add(match.players_pair_id_1)
             pair_ids.add(match.players_pair_id_2)
         if not pair_ids:
-            return {}
+            return []
 
         log.debug(f"Reading all PlayersPairs in Tour[id={tour.id}]")
-        pairs_query = select(PlayersPair).where(PlayersPair.id.in_(pair_ids))
+        pairs_query = select(PlayersPairEntity).where(PlayersPairEntity.id.in_(pair_ids))
         pairs = {p.id: p for p in session.execute(pairs_query).scalars().all()}
 
         all_player_ids = set()
@@ -144,10 +172,10 @@ def get_tour_players_points(tour_id: int) -> dict[Player, float]:
                 points[pair2.player2_id] = points.get(pair2.player2_id, 0) + match.score_players_pair_2
 
         log.debug(f"Reading all Players in Tour[id={tour.id}]")
-        players_query = select(Player).where(Player.id.in_(all_player_ids))
+        tour_players = session.query(PlayerEntity).where(PlayerEntity.id.in_(all_player_ids)).all()
         result = {
-            player: (points[player.id] / 2)
-            for player in session.execute(players_query).scalars().all()
+            _get_player_dto(player=player): ((points[player.id] / 2) if player.id in points else 0)
+            for player in tour_players
         }
 
-        return dict(sorted(result.items(), key=lambda i: i[1], reverse=True))
+        return list(sorted(result.items(), key=lambda i: i[1], reverse=True))

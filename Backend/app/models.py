@@ -1,4 +1,4 @@
-import database.base as db_entities
+from utils import dto
 from utils.datetime_utils import localize_datetime
 from datetime import datetime
 from pydantic import BaseModel
@@ -12,12 +12,12 @@ class PlayerResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, player_entity: db_entities.Player
+            cls, player_dto: dto.PlayerDTO
     ) -> 'PlayerResponse':
         return PlayerResponse(
-            id=player_entity.id,
-            name=player_entity.name,
-            registered_at=localize_datetime(player_entity.registered_at),
+            id=player_dto.id,
+            name=player_dto.name,
+            registered_at=localize_datetime(player_dto.registered_at),
         )
 
 
@@ -29,13 +29,13 @@ class TourResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, tour_entity: db_entities.Tour
+            cls, tour_dto: dto.TourDTO
     ) -> 'TourResponse':
         return TourResponse(
-            id=tour_entity.id,
-            name=tour_entity.name,
-            started_at=localize_datetime(tour_entity.started_at),
-            ended_at=localize_datetime(tour_entity.ended_at) if tour_entity.ended_at is not None else None,
+            id=tour_dto.id,
+            name=tour_dto.name,
+            started_at=localize_datetime(tour_dto.started_at),
+            ended_at=localize_datetime(tour_dto.ended_at) if tour_dto.ended_at is not None else None,
         )
 
 
@@ -45,10 +45,12 @@ class TourPlayerPointsResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, player_entity: db_entities.Player, player_tour_points: float
+            cls, player_dto: dto.PlayerDTO, player_tour_points: float
     ) -> 'TourPlayerPointsResponse':
         return TourPlayerPointsResponse(
-            player=PlayerResponse.of(player_entity),
+            player=PlayerResponse.of(
+                player_dto=player_dto,
+            ),
             player_tour_points=player_tour_points,
         )
 
@@ -59,11 +61,15 @@ class PlayersPairResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, player1_entity: db_entities.Player, player2_entity: db_entities.Player
+            cls, players_pair_dto: dto.PlayersPairDTO
     ) -> 'PlayersPairResponse':
         return PlayersPairResponse(
-            player1=PlayerResponse.of(player1_entity),
-            player2=PlayerResponse.of(player2_entity),
+            player1=PlayerResponse.of(
+                player_dto=players_pair_dto.player1_dto,
+            ),
+            player2=PlayerResponse.of(
+                player_dto=players_pair_dto.player2_dto,
+            ),
         )
 
 
@@ -77,39 +83,56 @@ class MatchResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, match_entity: db_entities.Match,
-            player1_pair1: db_entities.Player, player2_pair1: db_entities.Player,
-            player1_pair2: db_entities.Player, player2_pair2: db_entities.Player,
+            cls, match_dto: dto.MatchDTO,
     ) -> 'MatchResponse':
         return MatchResponse(
-            id=match_entity.id,
-            played_at=localize_datetime(match_entity.played_at),
+            id=match_dto.id,
+            played_at=localize_datetime(match_dto.played_at),
             players_pair1=PlayersPairResponse.of(
-                player1_entity=player1_pair1,
-                player2_entity=player2_pair1,
+                players_pair_dto=match_dto.players_pair1_dto,
             ),
             players_pair2=PlayersPairResponse.of(
-                player1_entity=player1_pair2,
-                player2_entity=player2_pair2,
+                players_pair_dto=match_dto.players_pair2_dto,
             ),
-            players_pair1_score=match_entity.score_players_pair_1,
-            players_pair2_score=match_entity.score_players_pair_2,
+            players_pair1_score=match_dto.players_pair1_score,
+            players_pair2_score=match_dto.players_pair2_score,
+        )
+
+
+class TourPlayersPairProposeResponse(BaseModel):
+    players_pair: PlayersPairResponse
+    last_played_at: Optional[datetime]
+
+    @classmethod
+    def of(
+            cls, players_pair_dto: dto.PlayersPairDTO, last_played_at: datetime | None = None
+    ) -> 'TourPlayersPairProposeResponse':
+        return TourPlayersPairProposeResponse(
+            players_pair=PlayersPairResponse.of(
+                players_pair_dto=players_pair_dto,
+            ),
+            last_played_at=localize_datetime(last_played_at) if last_played_at is not None else None,
         )
 
 
 class CreatePlayerRequest(BaseModel):
     name: str
-    registered_at: Optional[datetime] = None
 
 
-class StartTourRequest(BaseModel):
+class EditPlayerRequest(BaseModel):
+    name: Optional[str] = None
+
+
+class CreateTourRequest(BaseModel):
     name: str
     started_at: Optional[datetime] = None
     ended_at: Optional[datetime] = None
 
 
-class EndTourRequest(BaseModel):
-    ended_at: datetime
+class EditTourRequest(BaseModel):
+    name: Optional[str] = None
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
 
 
 class RegisterMatchRequest(BaseModel):
