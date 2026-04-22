@@ -105,7 +105,7 @@ class TourPlayersPairProposeResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, players_pair_dto: dto.PlayersPairDTO, last_played_at: datetime | None = None
+            cls, players_pair_dto: dto.PlayersPairDTO, last_played_at: datetime | None
     ) -> 'TourPlayersPairProposeResponse':
         return TourPlayersPairProposeResponse(
             players_pair=PlayersPairResponse.of(

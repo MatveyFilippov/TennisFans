@@ -36,7 +36,7 @@ def is_tour_exists(tour_id: int) -> bool:
         ).scalar())
 
 
-def create_tour(name: str, started_at: datetime | None = None, ended_at: datetime | None = None) -> dto.TourDTO:
+def create_tour(name: str, started_at: datetime = None, ended_at: datetime = None) -> dto.TourDTO:
     started_at = utc_datetime(started_at) if started_at else None
     ended_at = utc_datetime(ended_at) if ended_at else None
     with Session() as session:
@@ -55,7 +55,7 @@ def create_tour(name: str, started_at: datetime | None = None, ended_at: datetim
         return _get_tour_dto(tour=new_tour)
 
 
-def edit_tour(tour_id: int, name: str | None = None, started_at: datetime | None = None, ended_at: datetime | None = None) -> dto.TourDTO:
+def edit_tour(tour_id: int, name: str = None, started_at: datetime = None, ended_at: datetime = None) -> dto.TourDTO:
     started_at = utc_datetime(started_at) if started_at else None
     ended_at = utc_datetime(ended_at) if ended_at else None
     with Session() as session:

@@ -34,7 +34,7 @@ def is_player_exists(player_id: int) -> bool:
         ).scalar())
 
 
-def create_player(name: str, registered_at: datetime | None = None) -> dto.PlayerDTO:
+def create_player(name: str, registered_at: datetime = None) -> dto.PlayerDTO:
     registered_at = utc_datetime(registered_at) if registered_at else None
     with Session() as session:
         log.debug("Creating new Player")
@@ -50,7 +50,7 @@ def create_player(name: str, registered_at: datetime | None = None) -> dto.Playe
         return _get_player_dto(player=new_player)
 
 
-def edit_player(player_id: int, name: str | None = None) -> dto.PlayerDTO:
+def edit_player(player_id: int, name: str = None) -> dto.PlayerDTO:
     with Session() as session:
         player = _get_player(session=session, player_id=player_id)
 

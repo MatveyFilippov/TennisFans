@@ -53,7 +53,7 @@ def _get_or_create_players_pair(session: Session, player1_id: int, player2_id: i
     return pair
 
 
-def _get_pair_players(session: Session, players_pair: PlayersPairEntity | None = None, players_pair_id: int | None = None) -> tuple[PlayerEntity, PlayerEntity]:
+def _get_pair_players(session: Session, players_pair: PlayersPairEntity = None, players_pair_id: int = None) -> tuple[PlayerEntity, PlayerEntity]:
     if players_pair is None:
         if players_pair_id is None:
             raise ValueError("Can't get Players without PlayersPair")
@@ -68,7 +68,7 @@ def _get_pair_players(session: Session, players_pair: PlayersPairEntity | None =
 
 
 class PairPlayersCache:
-    def __init__(self, session: Session, cache_as_dto: bool | None = False):
+    def __init__(self, session: Session, cache_as_dto: bool = False):
         self.__session = session
         self.__cache = dict()
         self.__is_cache_as_dto = cache_as_dto
@@ -134,7 +134,7 @@ def is_match_exists(match_id: int) -> bool:
         ).scalar())
 
 
-def register_match(players_pair_1_ids: tuple[int, int], players_pair_2_ids: tuple[int, int], players_pair_1_score: int, players_pair_2_score: int, played_at: datetime | None = None) -> dto.MatchDTO:
+def register_match(players_pair_1_ids: tuple[int, int], players_pair_2_ids: tuple[int, int], players_pair_1_score: int, players_pair_2_score: int, played_at: datetime = None) -> dto.MatchDTO:
     played_at = utc_datetime(played_at) if played_at else None
     with Session() as session:
         players_pair_1 = _get_or_create_players_pair(session=session, player1_id=players_pair_1_ids[0], player2_id=players_pair_1_ids[1])
