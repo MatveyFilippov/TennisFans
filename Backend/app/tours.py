@@ -12,7 +12,7 @@ router = APIRouter(prefix="/tours", tags=["tours"])
 
 
 async def raise_not_found_if_tour_not_exists(tour_id: int):
-    log.debug(f"Checking Tour with id={tour_id} exists")
+    log.info(f"Checking Tour with id={tour_id} exists")
     if not db.tours.is_tour_exists(tour_id):
         log.debug(f"Tour with id={tour_id} doesn't exists")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such Tour")
@@ -86,6 +86,7 @@ async def edit_tour(tour_id: int, body: EditTourRequest):
         body.name = body.name.strip()
     log.debug(f"Getting Tour with id={tour_id}")
     tour_before_dto = db.tours.get_tour(tour_id=tour_id)
+    log.info(f"Get Tour with id={tour_id}")
     log.debug(f"Get: {tour_before_dto}")
     await raise_bad_request_if_invalid_tour_values(
         name=(body.name or tour_before_dto.name),
@@ -130,7 +131,7 @@ async def propose_players_pairs(tour_id: int):
 
     log.debug(f"Getting Tour with id={tour_id}")
     tour_dto = db.tours.get_tour(tour_id=tour_id)
-    log.debug(f"Get Tour with id={tour_dto.id}")
+    log.info(f"Get Tour with id={tour_dto.id}")
     log.debug(f"Get: {tour_dto}")
 
     if tour_dto.ended_at is not None and tour_dto.ended_at <= datetime.now(tz=settings.PROJECT_TIMEZONE):
@@ -142,7 +143,7 @@ async def propose_players_pairs(tour_id: int):
         player_dto.id: player_dto
         for player_dto in db.players.get_all_players()
     }
-    log.debug("Get all Players")
+    log.info("Get all Players")
     log.debug(f"Get: {all_players_id_dto}")
 
     log.debug(f"Getting all PlayersPairs last play for Tour with id={tour_dto.id}")
