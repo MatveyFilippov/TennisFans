@@ -11,6 +11,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-lg);
+    gap: var(--spacing-md);
 }
 
 .tournament__title {
@@ -18,6 +19,8 @@
     font-weight: 500;
     color: var(--color-primary);
     letter-spacing: -0.02em;
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .tournament__selector {
@@ -76,8 +79,15 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+    .tournament__header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-sm);
+    }
+
     .tournament__title {
         font-size: 24px;
+        text-align: center;
     }
 
     .tournament__selector {
@@ -88,7 +98,7 @@
         padding: var(--spacing-lg);
     }
 
-    .leaderboard__header, .leaderboard__row {
+    .leaderboard__row {
         grid-template-columns: 40px 1fr 80px;
         padding: var(--spacing-sm) var(--spacing-md);
         font-size: 14px;
