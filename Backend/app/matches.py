@@ -1,8 +1,8 @@
-from .models import *
-import database as db
-import settings
 from typing import List
 from fastapi import APIRouter, HTTPException, status
+import database as db
+import settings
+from .models import *
 
 
 log = settings.ProjectLoggerFactory.get_for("app.matches")
@@ -17,7 +17,11 @@ async def raise_not_found_if_match_not_exists(match_id: int):
     log.debug(f"Match with id={match_id} exists")
 
 
-async def raise_bad_request_if_invalid_player_values(side1_player1_id: int, side1_player2_id: int, side2_player1_id: int, side2_player2_id: int, side1_match_score: int, side2_match_score: int):
+async def raise_bad_request_if_invalid_player_values(
+    side1_player1_id: int, side1_player2_id: int,
+    side2_player1_id: int, side2_player2_id: int,
+    side1_match_score: int, side2_match_score: int,
+):
     log.debug("Checking Match values")
     if len({side1_player1_id, side1_player2_id, side2_player1_id, side2_player2_id}) != 4:
         log.debug(f"Player with id={side1_player1_id}|{side1_player2_id}|{side2_player1_id}|{side2_player2_id} doesn't unique")

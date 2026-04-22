@@ -1,10 +1,10 @@
-from .base import ENGINE
-from utils.datetime_utils import utc_datetime
 from datetime import datetime, timezone
 from typing import Optional, Type
 import sqlalchemy
-from sqlalchemy import Column, CheckConstraint, ForeignKey, Index, TypeDecorator, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Index, TypeDecorator, UniqueConstraint
 from sqlalchemy.orm import declarative_base
+from utils.datetime_utils import utc_datetime
+from .base import ENGINE
 
 
 EntityBase = declarative_base()

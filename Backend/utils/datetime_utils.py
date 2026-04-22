@@ -1,6 +1,6 @@
-import settings
-from datetime import datetime, tzinfo, timezone
+from datetime import datetime, timezone, tzinfo
 from functools import lru_cache
+import settings
 
 
 log = settings.ProjectLoggerFactory.get_for("utils.datetime")

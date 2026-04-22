@@ -1,2 +1,2 @@
 from .base import Session
-from .entities import PlayerEntity, TourEntity, PlayersPairEntity, MatchEntity
+from .entities import MatchEntity, PlayerEntity, PlayersPairEntity, TourEntity

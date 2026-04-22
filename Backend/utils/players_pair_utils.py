@@ -1,8 +1,8 @@
-from . import dto
 from datetime import datetime
-import settings
 from functools import lru_cache
 import networkx as nx
+import settings
+from . import dto
 
 
 log = settings.ProjectLoggerFactory.get_for("utils.playerspairs")
@@ -41,9 +41,11 @@ def find_optimal_players_pairs(all_players_id_dto: dict[int, dto.PlayerDTO], pla
     result = []
     for player_ids_pair in matching:
         player1_id, player2_id = sorted(player_ids_pair)
-        result.append(dto.PlayersPairDTO(
-            player1_dto=all_players_id_dto[player1_id],
-            player2_dto=all_players_id_dto[player2_id],
-        ))
+        result.append(
+            dto.PlayersPairDTO(
+                player1_dto=all_players_id_dto[player1_id],
+                player2_dto=all_players_id_dto[player2_id],
+            ),
+        )
     log.debug("End computing optimal PlayersPairs")
     return result

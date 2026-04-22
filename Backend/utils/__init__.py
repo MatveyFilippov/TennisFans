@@ -1,3 +1,3 @@
 from . import (
-    dto, datetime_utils, players_pair_utils,
+    datetime_utils, dto, players_pair_utils,
 )

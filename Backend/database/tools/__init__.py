@@ -1,3 +1,3 @@
 from . import (
-    players, matches, tours
+    matches, players, tours,
 )

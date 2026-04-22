@@ -1,8 +1,8 @@
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel
 from utils import dto
 from utils.datetime_utils import localize_datetime
-from datetime import datetime
-from pydantic import BaseModel
-from typing import Optional
 
 
 class PlayerResponse(BaseModel):
@@ -12,7 +12,7 @@ class PlayerResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, player_dto: dto.PlayerDTO
+        cls, player_dto: dto.PlayerDTO,
     ) -> 'PlayerResponse':
         return PlayerResponse(
             id=player_dto.id,
@@ -29,7 +29,7 @@ class TourResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, tour_dto: dto.TourDTO
+        cls, tour_dto: dto.TourDTO,
     ) -> 'TourResponse':
         return TourResponse(
             id=tour_dto.id,
@@ -45,7 +45,7 @@ class TourPlayerPointsResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, player_dto: dto.PlayerDTO, player_tour_points: float
+        cls, player_dto: dto.PlayerDTO, player_tour_points: float,
     ) -> 'TourPlayerPointsResponse':
         return TourPlayerPointsResponse(
             player=PlayerResponse.of(
@@ -61,7 +61,7 @@ class PlayersPairResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, players_pair_dto: dto.PlayersPairDTO
+        cls, players_pair_dto: dto.PlayersPairDTO,
     ) -> 'PlayersPairResponse':
         return PlayersPairResponse(
             player1=PlayerResponse.of(
@@ -83,7 +83,7 @@ class MatchResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, match_dto: dto.MatchDTO,
+        cls, match_dto: dto.MatchDTO,
     ) -> 'MatchResponse':
         return MatchResponse(
             id=match_dto.id,
@@ -105,7 +105,7 @@ class TourPlayersPairProposeResponse(BaseModel):
 
     @classmethod
     def of(
-            cls, players_pair_dto: dto.PlayersPairDTO, last_played_at: datetime | None
+        cls, players_pair_dto: dto.PlayersPairDTO, last_played_at: datetime | None,
     ) -> 'TourPlayersPairProposeResponse':
         return TourPlayersPairProposeResponse(
             players_pair=PlayersPairResponse.of(

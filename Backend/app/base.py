@@ -1,6 +1,6 @@
-import settings
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+import settings
 
 
 log = settings.ProjectLoggerFactory.get_for("app")

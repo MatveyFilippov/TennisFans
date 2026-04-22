@@ -1,10 +1,9 @@
-from .models import *
-import database as db
-from utils.players_pair_utils import find_optimal_players_pairs
-import settings
-from datetime import datetime
 from typing import List
 from fastapi import APIRouter, HTTPException, status
+import database as db
+import settings
+from utils.players_pair_utils import find_optimal_players_pairs
+from .models import *
 
 
 log = settings.ProjectLoggerFactory.get_for("app.tours")
@@ -36,7 +35,7 @@ async def create_tour(body: CreateTourRequest):
     await raise_bad_request_if_invalid_tour_values(
         name=body.name,
         started_at=(body.started_at or datetime.now(tz=settings.PROJECT_TIMEZONE)),
-        ended_at=body.ended_at
+        ended_at=body.ended_at,
     )
 
     log.debug("Creating new Tour")

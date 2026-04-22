@@ -1,8 +1,8 @@
-from .models import *
-import database as db
-import settings
 from typing import List
 from fastapi import APIRouter, HTTPException, status
+import database as db
+import settings
+from .models import *
 
 
 log = settings.ProjectLoggerFactory.get_for("app.players")
@@ -83,4 +83,3 @@ async def delete_player(player_id: int):
     db.players.delete_player(player_id=player_id)
     log.info(f"Delete Player with id={player_id}")
     return None
-

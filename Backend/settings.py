@@ -12,11 +12,13 @@ class Settings(ABC):
 
     @overload
     @classmethod
-    def ask_value(cls, prompt: str, required_type: None = None) -> str: ...
+    def ask_value(cls, prompt: str, required_type: None = None) -> str:
+        ...
 
     @overload
     @classmethod
-    def ask_value(cls, prompt: str, required_type: type[_T]) -> _T: ...
+    def ask_value(cls, prompt: str, required_type: type[_T]) -> _T:
+        ...
 
     @classmethod
     def ask_value(cls, prompt: str, required_type: type[_T] | None = str) -> Any:
@@ -37,10 +39,12 @@ class Settings(ABC):
         return NotImplemented
 
     @overload
-    def get(self, var_name: str, required_type: None = None, prompt_to_ask_value_if_not_exists: str = None) -> str: ...
+    def get(self, var_name: str, required_type: None = None, prompt_to_ask_value_if_not_exists: str = None) -> str:
+        ...
 
     @overload
-    def get(self, var_name: str, required_type: type[_T], prompt_to_ask_value_if_not_exists: str = None) -> _T: ...
+    def get(self, var_name: str, required_type: type[_T], prompt_to_ask_value_if_not_exists: str = None) -> _T:
+        ...
 
     def get(self, var_name: str, required_type: type[_T] | None = str, prompt_to_ask_value_if_not_exists: str = None) -> Any:
         if required_type is None:
@@ -54,10 +58,12 @@ class Settings(ABC):
             return self.set(var_name=var_name, value=value)
 
     @overload
-    def get_optional(self, var_name: str, default_value: None = None, set_default_value_if_not_exists: bool = True) -> Any | None: ...
+    def get_optional(self, var_name: str, default_value: None = None, set_default_value_if_not_exists: bool = True) -> Any | None:
+        ...
 
     @overload
-    def get_optional(self, var_name: str, default_value: _T, set_default_value_if_not_exists: bool = True) -> _T: ...
+    def get_optional(self, var_name: str, default_value: _T, set_default_value_if_not_exists: bool = True) -> _T:
+        ...
 
     def get_optional(self, var_name: str, default_value: _T | None = None, set_default_value_if_not_exists: bool = True) -> Any:
         try:
