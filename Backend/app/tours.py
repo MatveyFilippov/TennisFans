@@ -133,7 +133,7 @@ async def propose_players_pairs(tour_id: int):
     log.debug(f"Get Tour with id={tour_dto.id}")
     log.debug(f"Get: {tour_dto}")
 
-    if tour_dto.ended_at is not None and tour_dto.ended_at <= datetime.now(settings.PROJECT_TIMEZONE):
+    if tour_dto.ended_at is not None and tour_dto.ended_at <= datetime.now(tz=settings.PROJECT_TIMEZONE):
         log.debug(f"Tour with id={tour_dto.id} already ended")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Can't propose pairs for ended Tour")
 

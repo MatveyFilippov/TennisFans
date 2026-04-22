@@ -1,9 +1,9 @@
 from .players import _get_player_dto
 from ..base import Session, PlayerEntity, TourEntity, PlayersPairEntity, MatchEntity
 from utils import dto
-from utils.datetime_utils import utc_datetime, UTC_TIMEZONE
+from utils.datetime_utils import utc_datetime
 import settings
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import and_, desc, exists, or_, select
 
 
@@ -97,7 +97,7 @@ def get_tour(tour_id: int) -> dto.TourDTO:
 
 
 def get_all_not_ended_tours() -> list[dto.TourDTO]:
-    dt_now = datetime.now(tz=UTC_TIMEZONE)
+    dt_now = datetime.now(tz=timezone.min)
     with Session() as session:
         log.debug("Reading all not ended Tours")
         stmt = select(TourEntity).where(

@@ -1,6 +1,6 @@
 from .base import ENGINE
-from utils.datetime_utils import UTC_TIMEZONE, utc_datetime
-from datetime import datetime
+from utils.datetime_utils import utc_datetime
+from datetime import datetime, timezone
 from typing import Optional, Type
 import sqlalchemy
 from sqlalchemy import Column, CheckConstraint, ForeignKey, Index, TypeDecorator, UniqueConstraint
@@ -41,7 +41,7 @@ class PlayerEntity(EntityBase):
 
     id = Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     name = Column(sqlalchemy.Text, nullable=False)
-    registered_at = Column(DateTimeUTC, nullable=False, default=lambda: datetime.now(UTC_TIMEZONE))
+    registered_at = Column(DateTimeUTC, nullable=False, default=lambda: datetime.now(tz=timezone.utc))
 
     __table_args__ = (
         Index("idx_players_registered_at", registered_at),
@@ -53,7 +53,7 @@ class TourEntity(EntityBase):
 
     id = Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     name = Column(sqlalchemy.Text, nullable=False)
-    started_at = Column(DateTimeUTC, nullable=False, default=lambda: datetime.now(UTC_TIMEZONE))
+    started_at = Column(DateTimeUTC, nullable=False, default=lambda: datetime.now(tz=timezone.utc))
     ended_at = Column(DateTimeUTC, nullable=True)
 
     __table_args__ = (
@@ -79,7 +79,7 @@ class MatchEntity(EntityBase):
     __tablename__ = "matches"
 
     id = Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
-    played_at = Column(DateTimeUTC, nullable=False, default=lambda: datetime.now(UTC_TIMEZONE))
+    played_at = Column(DateTimeUTC, nullable=False, default=lambda: datetime.now(tz=timezone.utc))
     players_pair_id_1 = Column(sqlalchemy.Integer, ForeignKey("players_pairs.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
     players_pair_id_2 = Column(sqlalchemy.Integer, ForeignKey("players_pairs.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
     score_players_pair_1 = Column(sqlalchemy.Integer, nullable=False)
