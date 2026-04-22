@@ -35,7 +35,7 @@ async def create_tour(body: CreateTourRequest):
     body.name = body.name.strip()
     await raise_bad_request_if_invalid_tour_values(
         name=body.name,
-        started_at=(body.started_at or datetime.now(tz=settings.BACKEND_TIMEZONE)),
+        started_at=(body.started_at or datetime.now(tz=settings.PROJECT_TIMEZONE)),
         ended_at=body.ended_at
     )
 
@@ -133,7 +133,7 @@ async def propose_players_pairs(tour_id: int):
     log.debug(f"Get Tour with id={tour_dto.id}")
     log.debug(f"Get: {tour_dto}")
 
-    if tour_dto.ended_at is not None and tour_dto.ended_at <= datetime.now(settings.BACKEND_TIMEZONE):
+    if tour_dto.ended_at is not None and tour_dto.ended_at <= datetime.now(settings.PROJECT_TIMEZONE):
         log.debug(f"Tour with id={tour_dto.id} already ended")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Can't propose pairs for ended Tour")
 

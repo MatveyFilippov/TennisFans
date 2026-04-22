@@ -20,4 +20,4 @@ def utc_datetime(dt: datetime) -> datetime:
 
 @lru_cache(maxsize=10_000)
 def localize_datetime(dt: datetime) -> datetime:
-    return __datetime_to_timezone(dt=dt, tz=settings.BACKEND_TIMEZONE)
+    return __datetime_to_timezone(dt=dt, tz=settings.PROJECT_TIMEZONE)

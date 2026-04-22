@@ -17,7 +17,7 @@ def find_optimal_players_pairs(all_players_id_dto: dict[int, dto.PlayerDTO], pla
     if len(all_player_ids) % 2 != 0:
         raise ValueError("Quantity of players must be even")
 
-    current_time = datetime.now(tz=settings.BACKEND_TIMEZONE)
+    current_time = datetime.now(tz=settings.PROJECT_TIMEZONE)
     player_ids_pair_last_play = {
         tuple(sorted([players_pair_dto.player1_dto.id, players_pair_dto.player2_dto.id])): last_played
         for players_pair_dto, last_played in players_pair_dto_last_play.items()
