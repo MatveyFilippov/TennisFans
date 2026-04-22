@@ -145,10 +145,6 @@ async def propose_players_pairs(tour_id: int):
     log.debug("Get all Players")
     log.debug(f"Get: {all_players_id_dto}")
 
-    if len(all_players_id_dto) % 2 != 0:
-        log.debug("Players number is not even")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Can't propose pairs for not even quantity of Players")
-
     log.debug(f"Getting all PlayersPairs last play for Tour with id={tour_dto.id}")
     players_pair_dto_last_play = db.matches.get_players_pair_last_play(tour_id=tour_dto.id)
     log.info(f"Get all PlayersPairs last play for Tour with id={tour_dto.id}")
