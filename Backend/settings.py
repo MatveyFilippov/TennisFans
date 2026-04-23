@@ -111,7 +111,7 @@ class SettingsJSON(Settings):
 
 
 project_settings: Settings = SettingsJSON(json_filepath="BackendSettings.json")
-PROJECT_VERSION: Final = project_settings.get_optional(var_name="version", default_value="-v0.2.0-SNAPSHOT")  # use '-vn.n.n' format, where 'n' - number
+PROJECT_VERSION: Final = project_settings.get_optional(var_name="version", default_value="-v0.2.0")  # use '-vn.n.n' format, where 'n' - number
 PROJECT_TIMEZONE: Final = ZoneInfo(project_settings.get_optional(var_name="timezone", default_value="UTC", set_default_value_if_not_exists=False))
 APP_ROOT_PATH: Final = project_settings.get_optional(var_name="app.root_path", default_value="/api", set_default_value_if_not_exists=False)
 APP_HOST: Final = project_settings.get_optional(var_name="app.host", default_value="127.0.0.1", set_default_value_if_not_exists=False)
