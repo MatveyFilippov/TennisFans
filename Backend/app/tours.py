@@ -1,10 +1,9 @@
-from .models import *
-import database as db
-from utils.players_pair_utils import find_optimal_players_pairs
-import settings
-from datetime import datetime
 from typing import List
 from fastapi import APIRouter, HTTPException, status
+import database as db
+import settings
+from utils.players_pair_utils import find_optimal_players_pairs
+from .models import *
 
 
 log = settings.ProjectLoggerFactory.get_for("app.tours")
@@ -12,7 +11,7 @@ router = APIRouter(prefix="/tours", tags=["tours"])
 
 
 async def raise_not_found_if_tour_not_exists(tour_id: int):
-    log.debug(f"Checking Tour with id={tour_id} exists")
+    log.info(f"Checking Tour with id={tour_id} exists")
     if not db.tours.is_tour_exists(tour_id):
         log.debug(f"Tour with id={tour_id} doesn't exists")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such Tour")
@@ -35,8 +34,8 @@ async def create_tour(body: CreateTourRequest):
     body.name = body.name.strip()
     await raise_bad_request_if_invalid_tour_values(
         name=body.name,
-        started_at=(body.started_at or datetime.now(tz=settings.BACKEND_TIMEZONE)),
-        ended_at=body.ended_at
+        started_at=(body.started_at or datetime.now(tz=settings.PROJECT_TIMEZONE)),
+        ended_at=body.ended_at,
     )
 
     log.debug("Creating new Tour")
@@ -86,6 +85,7 @@ async def edit_tour(tour_id: int, body: EditTourRequest):
         body.name = body.name.strip()
     log.debug(f"Getting Tour with id={tour_id}")
     tour_before_dto = db.tours.get_tour(tour_id=tour_id)
+    log.info(f"Get Tour with id={tour_id}")
     log.debug(f"Get: {tour_before_dto}")
     await raise_bad_request_if_invalid_tour_values(
         name=(body.name or tour_before_dto.name),
@@ -130,10 +130,10 @@ async def propose_players_pairs(tour_id: int):
 
     log.debug(f"Getting Tour with id={tour_id}")
     tour_dto = db.tours.get_tour(tour_id=tour_id)
-    log.debug(f"Get Tour with id={tour_dto.id}")
+    log.info(f"Get Tour with id={tour_dto.id}")
     log.debug(f"Get: {tour_dto}")
 
-    if tour_dto.ended_at is not None and tour_dto.ended_at <= datetime.now(settings.BACKEND_TIMEZONE):
+    if tour_dto.ended_at is not None and tour_dto.ended_at <= datetime.now(tz=settings.PROJECT_TIMEZONE):
         log.debug(f"Tour with id={tour_dto.id} already ended")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Can't propose pairs for ended Tour")
 
@@ -142,12 +142,8 @@ async def propose_players_pairs(tour_id: int):
         player_dto.id: player_dto
         for player_dto in db.players.get_all_players()
     }
-    log.debug("Get all Players")
+    log.info("Get all Players")
     log.debug(f"Get: {all_players_id_dto}")
-
-    if len(all_players_id_dto) % 2 != 0:
-        log.debug("Players number is not even")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Can't propose pairs for not even quantity of Players")
 
     log.debug(f"Getting all PlayersPairs last play for Tour with id={tour_dto.id}")
     players_pair_dto_last_play = db.matches.get_players_pair_last_play(tour_id=tour_dto.id)

@@ -1,8 +1,8 @@
-from .models import *
-import database as db
-import settings
 from typing import List
 from fastapi import APIRouter, HTTPException, status
+import database as db
+import settings
+from .models import *
 
 
 log = settings.ProjectLoggerFactory.get_for("app.players")
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/players", tags=["players"])
 
 
 async def raise_not_found_if_player_not_exists(player_id: int):
-    log.debug(f"Checking Player with id={player_id} exists")
+    log.info(f"Checking Player with id={player_id} exists")
     if not db.players.is_player_exists(player_id):
         log.debug(f"Player with id={player_id} doesn't exists")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such Player")
@@ -64,6 +64,7 @@ async def edit_player(player_id: int, body: EditPlayerRequest):
         body.name = body.name.strip()
     log.debug(f"Getting Player with id={player_id}")
     player_before_dto = db.players.get_player(player_id=player_id)
+    log.info(f"Get Player with id={player_before_dto.id}")
     log.debug(f"Get: {player_before_dto}")
     await raise_bad_request_if_invalid_player_values(name=(body.name or player_before_dto.name))
 
@@ -82,4 +83,3 @@ async def delete_player(player_id: int):
     db.players.delete_player(player_id=player_id)
     log.info(f"Delete Player with id={player_id}")
     return None
-

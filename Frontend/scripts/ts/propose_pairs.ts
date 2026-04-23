@@ -9,6 +9,7 @@ class PairsApp {
 
     private activeTours: TourResponse[] = [];
     private currentPairs: TourPlayersPairProposeResponse[] = [];
+    private currentRanking: Map<number, { rank: number; points: number }> = new Map();
 
     constructor() {
         this.tourSelect = document.getElementById('tourSelect') as HTMLSelectElement;
@@ -72,12 +73,24 @@ class PairsApp {
         try {
             this.renderLoading();
 
-            this.currentPairs = await toursApi.getProposedPairs(tourId);
+            const [pairs, rankingData] = await Promise.all([
+                toursApi.getProposedPairs(tourId),
+                toursApi.getPlayersPoints(tourId),
+            ]);
 
+            this.currentPairs = pairs;
             if (this.currentPairs.length === 0) {
                 this.showEmptyState('Для этого тура пока нет предложенных пар');
                 return;
             }
+
+            this.currentRanking.clear();
+            rankingData.forEach((item, index) => {
+                this.currentRanking.set(item.player.id, {
+                    rank: index + 1,
+                    points: item.player_tour_points,
+                });
+            });
 
             this.renderPairs(this.currentPairs);
         } catch (error) {
@@ -96,11 +109,15 @@ class PairsApp {
 
     private renderPairCard(pair: TourPlayersPairProposeResponse, index: number): string {
         const lastPlayedInfo = !pair.last_played_at ? 'Ранее не играли' : `Играли: ${this.formatRelativeTime(pair.last_played_at)}`;
-        
+
+        const player1Points = this.currentRanking.get(pair.players_pair.player1.id)?.points ?? 0;
+        const player2Points = this.currentRanking.get(pair.players_pair.player2.id)?.points ?? 0;
+        const averagePoints = (player1Points + player2Points) / 2;
+
         return `
             <div class="pair-card">
                 <div class="pair-card__header">
-                    <span class="pair-card__number">Пара #${index + 1}</span>
+                    <span class="pair-card__number">Пара №${index + 1}</span>
                     <span class="pair-card__badge">${lastPlayedInfo}</span>
                 </div>
                 <div class="pair-card__players">
@@ -108,29 +125,31 @@ class PairsApp {
                     ${this.renderPlayerItem(pair.players_pair.player2)}
                 </div>
                 <div class="pair-card__footer">
-                    <span class="pair-card__avg_points">Усреднённые очки: ${"TODO"}</span>
+                    <span class="pair-card__avg_points">Усреднённые очки: ${averagePoints}</span>
                 </div>
             </div>
         `;
     }
 
     private renderPlayerItem(player: PlayerResponse): string {
+        const rank = this.currentRanking.get(player.id)?.rank;
+
         return `
             <div class="pair-player">
                 <div class="pair-player__info">
                     <div class="pair-player__name">${this.escapeHtml(player.name)}</div>
-                    <div class="pair-player__id">Место в рейтинге: #${"TODO"}</div>
+                    <div class="pair-player__id">Место в рейтинге: ${rank ? `#${rank}` : '—'}</div>
                 </div>
             </div>
         `;
     }
-    
+
     private formatRelativeTime(dateString: string): string {
         const date = new Date(dateString);
         const now = new Date();
         const diffMs = now.getTime() - date.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        
+
         if (diffDays < 1) return 'сегодня';
         if (diffDays < 7) return `${diffDays} дн. назад`;
         if (diffDays < 30) return `${Math.floor(diffDays / 7)} нед. назад`;

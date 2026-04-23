@@ -1,10 +1,10 @@
-import settings
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+import settings
 
 
 log = settings.ProjectLoggerFactory.get_for("app")
-APP = FastAPI(version=settings.BACKEND_VERSION, root_path=settings.APP_ROOT_PATH)
+APP = FastAPI(version=settings.PROJECT_VERSION, root_path=settings.APP_ROOT_PATH)
 
 
 @APP.middleware("http")

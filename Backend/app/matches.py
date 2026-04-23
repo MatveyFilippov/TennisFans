@@ -1,8 +1,8 @@
-from .models import *
-import database as db
-import settings
 from typing import List
 from fastapi import APIRouter, HTTPException, status
+import database as db
+import settings
+from .models import *
 
 
 log = settings.ProjectLoggerFactory.get_for("app.matches")
@@ -10,14 +10,18 @@ router = APIRouter(prefix="/matches", tags=["matches"])
 
 
 async def raise_not_found_if_match_not_exists(match_id: int):
-    log.debug("Checking Match exists")
+    log.info(f"Checking Match with id={match_id} exists")
     if not db.matches.is_match_exists(match_id):
         log.debug(f"Match with id={match_id} doesn't exists")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such Match")
     log.debug(f"Match with id={match_id} exists")
 
 
-async def raise_bad_request_if_invalid_player_values(side1_player1_id: int, side1_player2_id: int, side2_player1_id: int, side2_player2_id: int, side1_match_score: int, side2_match_score: int):
+async def raise_bad_request_if_invalid_player_values(
+    side1_player1_id: int, side1_player2_id: int,
+    side2_player1_id: int, side2_player2_id: int,
+    side1_match_score: int, side2_match_score: int,
+):
     log.debug("Checking Match values")
     if len({side1_player1_id, side1_player2_id, side2_player1_id, side2_player2_id}) != 4:
         log.debug(f"Player with id={side1_player1_id}|{side1_player2_id}|{side2_player1_id}|{side2_player2_id} doesn't unique")
@@ -26,6 +30,7 @@ async def raise_bad_request_if_invalid_player_values(side1_player1_id: int, side
         log.debug(f"Match score={side1_match_score}|{side2_match_score} is negative")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Match score can't be negative")
     for player_id in [side1_player1_id, side1_player2_id, side2_player1_id, side2_player2_id]:
+        log.info(f"Checking Player with id={player_id} exists")
         if not db.players.is_player_exists(player_id):
             log.debug(f"Player with id={player_id} doesn't exists")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No such Player")
@@ -63,7 +68,7 @@ async def get_all_matches(player_id: int | None = None, played_after: datetime |
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid datetime range")
 
     if player_id is not None:
-        log.debug(f"Checking Player with id={player_id} exists")
+        log.info(f"Checking Player with id={player_id} exists")
         if not db.players.is_player_exists(player_id):
             log.debug(f"Player with id={player_id} doesn't exists")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No such Player")
