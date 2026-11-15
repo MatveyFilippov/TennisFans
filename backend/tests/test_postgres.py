@@ -197,7 +197,7 @@ def test_sessions_reset_and_origin(app):
         == 200
     )
     reset = post(app, f"/admin/users/{player_id}/reset", admin).json()
-    assert app.get(API + "/auth/session", headers=player).status_code == 401
+    assert app.get(API + "/auth/session", headers=player).json() is None
     assert (
         app.post(API + "/auth/login", json={"username": "Celia", "password": PASSWORD}).status_code
         == 401
@@ -213,7 +213,7 @@ def test_sessions_reset_and_origin(app):
     )
     changed = post(app, "/auth/password", temp, {"new_password": "another durable password"})
     _, valid = identity(changed)
-    assert app.get(API + "/auth/session", headers=temp).status_code == 401
+    assert app.get(API + "/auth/session", headers=temp).json() is None
     assert not app.get(API + "/auth/session", headers=valid).json()["password_change_required"]
     assert (
         app.post(
@@ -224,7 +224,7 @@ def test_sessions_reset_and_origin(app):
         == 422
     )
     post(app, "/auth/logout", valid, expected=204)
-    assert app.get(API + "/auth/session", headers=valid).status_code == 401
+    assert app.get(API + "/auth/session", headers=valid).json() is None
 
 
 def test_friendly_replay_idempotency_disputes_and_media(app):

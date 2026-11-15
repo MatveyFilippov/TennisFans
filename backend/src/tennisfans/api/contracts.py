@@ -239,6 +239,7 @@ class PlayerStats(BaseModel):
     recent: list[MatchView]
     tournaments: list[TournamentFinish]
     history: list[Point]
+    gallery: list[Photo]
 
 
 class PairStats(BaseModel):

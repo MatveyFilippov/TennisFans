@@ -22,7 +22,7 @@ from tennisfans.domain.permissions import (
     require_participant,
     require_resolver,
 )
-from tennisfans.domain.scoring import Discipline, Input, Rules, Score, validate_score
+from tennisfans.domain.scoring import Discipline, Input, Outcome, Rules, Score, validate_score
 from tennisfans.modules import brackets, tournaments
 from tennisfans.modules.facts import (
     create_match,
@@ -218,7 +218,8 @@ def submit(
         return get(db, retry).id
     match = get(db, match_id)
     a, b = sides(db, match)
-    require_participant(actor.id, a + b)
+    if actor.role != Role.ADMIN or payload.score.outcome == Outcome.COMPETITIVE:
+        require_participant(actor.id, a + b)
     _version(match, payload.version)
     tournament_id = tournament_id_for(db, match)
     if not tournament_id or match.outcome or match.blocked:

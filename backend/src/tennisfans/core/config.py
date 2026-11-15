@@ -8,7 +8,9 @@ from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="TENNISFANS_", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="TENNISFANS_", extra="ignore", hide_input_in_errors=True
+    )
 
     database_url: SecretStr
     session_secret: SecretStr

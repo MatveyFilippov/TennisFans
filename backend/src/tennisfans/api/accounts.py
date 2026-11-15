@@ -68,8 +68,13 @@ def login(
 
 
 @router.get("/auth/session", tags=["auth"])
-def session(request: Request, db: Database, env: Environment, authn: SignedIn) -> dto.Account:
-    return _account(db, env, authn[0], session_token(request), authn[1].restricted)
+def session(request: Request, db: Database, env: Environment) -> dto.Account | None:
+    token = session_token(request)
+    credentials = auth.get_session(db, token)
+    if credentials is None:
+        return None
+    user, active_session = credentials
+    return _account(db, env, user, token, active_session.restricted)
 
 
 @router.post("/auth/logout", status_code=204, tags=["auth"])

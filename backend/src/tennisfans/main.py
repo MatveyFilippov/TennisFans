@@ -4,7 +4,6 @@ import logging
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import timedelta
 from functools import partial
 from importlib.metadata import version
 from typing import Any
@@ -26,7 +25,7 @@ from tennisfans.api.context import Environment, Runtime
 from tennisfans.api.contracts import ErrorBody
 from tennisfans.core.config import Settings
 from tennisfans.core.errors import Problem
-from tennisfans.db.accounts import Idempotency, LoginSession, RateBucket
+from tennisfans.db.accounts import LoginSession, RateBucket
 from tennisfans.db.base import now
 from tennisfans.db.runtime import engine_for, migrate, session_factory
 from tennisfans.modules.auth import rate_limit
@@ -200,9 +199,6 @@ def _maintenance(runtime: Runtime, housekeeping: bool) -> None:
         with runtime.db.begin() as db:
             db.execute(delete(LoginSession).where(LoginSession.expires_at <= now()))
             db.execute(delete(RateBucket).where(RateBucket.expires_at <= now()))
-            db.execute(
-                delete(Idempotency).where(Idempotency.created_at < now() - timedelta(days=7))
-            )
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

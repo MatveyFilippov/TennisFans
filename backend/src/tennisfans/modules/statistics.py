@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from tennisfans.api import contracts as dto
 from tennisfans.db.accounts import User
 from tennisfans.db.competition import Membership, Tournament
+from tennisfans.db.media import Media
 from tennisfans.db.results import Match, RatingPoint, SidePlayer
 from tennisfans.domain.scoring import Discipline, Rules, score_totals
 from tennisfans.modules.facts import eligible, load_user, result, sets_many, sides_many
@@ -88,12 +89,23 @@ def player_stats(db: Session, player_id: UUID) -> dto.PlayerStats:
                 rank_end=placement.rank_end if placement else None,
             )
         )
+    recent = [match for match, _ in reversed(matches[-10:])]
+    gallery = [
+        dto.Photo.model_validate(photo)
+        for photo in db.scalars(
+            select(Media)
+            .where(Media.match_id.in_([match.id for match in recent]))
+            .order_by(Media.created_at.desc(), Media.id)
+            .limit(24)
+        )
+    ]
     return dto.PlayerStats(
         player=public_users(db, [user])[player_id],
         overall=total[None],
         singles=total[Discipline.SINGLES],
         doubles=total[Discipline.DOUBLES],
-        recent=match_views(db, [match for match, _ in reversed(matches[-10:])]),
+        recent=match_views(db, recent),
+        gallery=gallery,
         tournaments=finishes,
         history=points(db, [player_id]).get(player_id, []),
     )
