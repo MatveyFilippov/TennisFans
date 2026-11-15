@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+root=${1:?Usage: activate ROOT ENVIRONMENT BUNDLE EXPECTED_SHA}
+environment=${2:?Missing environment}
+bundle=${3:?Missing bundle}
+sha=${4:?Missing commit SHA}
+[[ $environment == development || $environment == production ]] || exit 2
+[[ $sha =~ ^[a-f0-9]{40}$ && $root =~ ^/[a-zA-Z0-9_./-]+$ ]] || exit 2
+: "${TENNISFANS_UV:=uv}"
+: "${TENNISFANS_DEPLOY_CONFIG:=/etc/tennisfans/$environment/deploy.env}"
+# The deploy configuration is provisioned by the host operator.
+if [[ ! -r $TENNISFANS_DEPLOY_CONFIG ]]; then
+  echo 'The operator must install the environment deployment configuration' >&2
+  exit 1
+fi
+# shellcheck source=/dev/null
+source "$TENNISFANS_DEPLOY_CONFIG"
+: "${BACKEND_SERVICE:?Set BACKEND_SERVICE}"
+: "${FRONTEND_SERVICE:?Set FRONTEND_SERVICE}"
+: "${BACKEND_HEALTH_URL:?Set BACKEND_HEALTH_URL}"
+: "${FRONTEND_HEALTH_URL:?Set FRONTEND_HEALTH_URL}"
+: "${TENNISFANS_DATABASE_URL:?Set TENNISFANS_DATABASE_URL}"
+: "${TENNISFANS_MEDIA_ROOT:?Set TENNISFANS_MEDIA_ROOT}"
+mkdir -p -- "$root/releases" "$root/backups"
+exec 9>"$root/deploy.lock"
+flock -n 9 || { echo 'Another deployment is running' >&2; exit 1; }
+release="$root/releases/$sha"
+work=$(mktemp -d "$root/releases/.build.XXXXXXXX")
+connection=$(mktemp)
+trap 'rm -f -- "$connection"; rm -rf -- "$work"' EXIT
+tar -C "$work" -xzf "$bundle"
+[[ $(cat "$work/commit") == "$sha" ]] || { echo 'Artifact commit mismatch' >&2; exit 1; }
+# Keep the virtual environment at its final path because its entry points use absolute paths.
+if [[ ! -d $release ]]; then
+  mv -T -- "$work" "$release"
+fi
+(cd "$release/backend" && "$TENNISFANS_UV" sync --locked --no-dev --no-editable --python /usr/bin/python3.12)
+previous=$(readlink "$root/current" || true)
+backup_dir="$root/backups/$(date -u +'%Y%m%dT%H%M%SZ')-$sha"
+export TENNISFANS_DATABASE_URL TENNISFANS_MEDIA_ROOT TENNISFANS_SESSION_SECRET
+# shellcheck source=/dev/null
+source "$(dirname -- "$0")/pg-service"
+configure_postgres "$connection"
+export TENNISFANS_ENVIRONMENT TENNISFANS_SECURE_COOKIES TENNISFANS_ALLOWED_ORIGINS TENNISFANS_PUBLIC_URL
+version_sql="SELECT CASE WHEN to_regclass('alembic_version') IS NULL THEN 0 ELSE 1 END"
+
+schema_revision() {
+  local installed
+  installed=$(psql -XAt -v ON_ERROR_STOP=1 -c "$version_sql") || return
+  if [[ $installed == 1 ]]; then
+    psql -XAt -v ON_ERROR_STOP=1 -c 'SELECT version_num FROM alembic_version'
+  fi
+}
+
+switch() {
+  ln -sfn -- "$1" "$root/.next"
+  mv -Tf -- "$root/.next" "$root/current"
+}
+
+ctl() { sudo -n systemctl "$@"; }
+previous_version=$(schema_revision)
+rollback() {
+  local code=$?
+  trap - ERR
+  set +e
+  ctl stop "$BACKEND_SERVICE" "$FRONTEND_SERVICE"
+  if [[ -n $previous ]]; then
+    switch "$previous"
+    if [[ $(schema_revision) == "$previous_version" ]]; then
+      ctl start "$BACKEND_SERVICE" "$FRONTEND_SERVICE"
+      echo 'Restored the previous release with the same database revision' >&2
+    else
+      echo "Database revision changed. Services are stopped. Follow the recovery runbook using $backup_dir" >&2
+    fi
+  else
+    rm -f -- "$root/current"
+    echo 'First installation failed. Check the service journal before retrying.' >&2
+  fi
+  exit "$code"
+}
+
+trap rollback ERR
+ctl stop "$BACKEND_SERVICE" "$FRONTEND_SERVICE"
+if [[ -n $previous_version ]]; then
+  "$release/deploy/scripts/backup" "$backup_dir"
+fi
+"$release/backend/.venv/bin/tennisfans" db upgrade
+printf 'TENNISFANS_BUILD_SHA=%s\n' "$sha" > "$release/build.env"
+switch "$release"
+ctl start "$BACKEND_SERVICE" "$FRONTEND_SERVICE"
+for endpoint in "$BACKEND_HEALTH_URL/health/ready" "$BACKEND_HEALTH_URL/api/v1/version" "$FRONTEND_HEALTH_URL/health/live"; do
+  response=$(curl --silent --show-error --fail --retry 10 --retry-all-errors --retry-delay 1 --connect-timeout 3 --max-time 6 "$endpoint")
+  if [[ $endpoint != */health/ready ]]; then
+    [[ $(python3.12 -c 'import json, sys; print(json.load(sys.stdin)["commit"])' <<< "$response") == "$sha" ]]
+  fi
+done
+trap - ERR
+echo "Deployed $environment revision $sha"

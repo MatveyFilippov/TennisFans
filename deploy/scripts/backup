@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+: "${TENNISFANS_DATABASE_URL:?Set the backend database connection}"
+: "${TENNISFANS_MEDIA_ROOT:?Set the persistent media directory}"
+destination=${1:?Usage: backup NEW_BACKUP_DIRECTORY; stop all writers first}
+[[ ! -e "$destination" ]] || { echo 'Backup destination already exists' >&2; exit 1; }
+work=$(mktemp -d "${destination}.partial.XXXXXXXX")
+trap 'rm -rf -- "$work"' EXIT
+# shellcheck source=/dev/null
+source "$(dirname -- "$0")/pg-service"
+configure_postgres "$work/connection.conf"
+psql -XAt -v ON_ERROR_STOP=1 -c 'SELECT version_num FROM alembic_version' > "$work/revision"
+pg_dump --format=custom --no-owner --no-acl --file="$work/database.dump"
+tar -C "$TENNISFANS_MEDIA_ROOT" -cf "$work/media.tar" -- .
+rm -- "$work/connection.conf"
+(cd "$work" && sha256sum -- revision database.dump media.tar > SHA256SUMS)
+mv -T -- "$work" "$destination"
+echo "Backup complete at $destination"

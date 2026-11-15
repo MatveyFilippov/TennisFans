@@ -1,0 +1,11 @@
+name: Bug report
+description: Report a reproducible product problem
+title: "[Bug] "
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed and expected behavior
+      description: Include the release, browser, and relevant steps. Omit credentials and private data.
+    validations:
+      required: true

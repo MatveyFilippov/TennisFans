@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+# Use a short-lived libpq service file so the DB URI stays out of process arguments.
+configure_postgres() {
+  local file=$1
+  python3.12 - "$file" <<'PY'
+import os
+import re
+import sys
+from pathlib import Path
+from urllib.parse import parse_qsl, unquote, urlsplit
+
+try:
+    url = urlsplit(os.environ["TENNISFANS_DATABASE_URL"])
+    if url.scheme not in {"postgresql", "postgresql+psycopg"} or not url.path.lstrip("/"):
+        raise ValueError
+    params = {
+        "dbname": unquote(url.path[1:]),
+        "host": url.hostname,
+        "port": str(url.port) if url.port is not None else None,
+        "user": unquote(url.username) if url.username is not None else None,
+        "password": unquote(url.password) if url.password is not None else None,
+    }
+    params.update(parse_qsl(url.query, keep_blank_values=True))
+    lines = ["[tennisfans]"]
+    for key, value in params.items():
+        if value is None:
+            continue
+        if not re.fullmatch(r"[a-z_]+", key) or "\r" in value or "\n" in value or "\0" in value:
+            raise ValueError
+        lines.append(f"{key}={value}")
+    Path(sys.argv[1]).write_text("\n".join(lines) + "\n", encoding="utf-8")
+except (KeyError, ValueError):
+    sys.exit("Set a valid PostgreSQL connection URL for backup and deployment tools")
+PY
+  export PGSERVICE=tennisfans PGSERVICEFILE="$file"
+}

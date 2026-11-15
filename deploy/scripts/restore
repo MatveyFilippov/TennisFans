@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+: "${TENNISFANS_DATABASE_URL:?Set the recovery database connection}"
+: "${TENNISFANS_MEDIA_ROOT:?Set a new media directory}"
+source_dir=${1:?Usage: restore BACKUP_DIRECTORY --confirm-empty-target}
+[[ ${2:-} == '--confirm-empty-target' ]] || { echo 'Confirm an empty, separate recovery target' >&2; exit 1; }
+(cd "$source_dir" && sha256sum --check --strict SHA256SUMS)
+connection=$(mktemp)
+work=
+trap 'rm -f -- "$connection"; if [[ -n $work ]]; then rm -rf -- "$work"; fi' EXIT
+# shellcheck source=/dev/null
+source "$(dirname -- "$0")/pg-service"
+configure_postgres "$connection"
+relations=$(psql -XAt -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=current_schema()")
+[[ $relations == 0 ]] || { echo 'The target database schema is populated' >&2; exit 1; }
+mkdir -p -- "$TENNISFANS_MEDIA_ROOT"
+[[ -z $(find "$TENNISFANS_MEDIA_ROOT" -mindepth 1 -maxdepth 1 -print -quit) ]] || { echo 'The target media directory is populated' >&2; exit 1; }
+work=$(mktemp -d "${TENNISFANS_MEDIA_ROOT}.restore.XXXXXXXX")
+tar -C "$work" --no-same-owner --no-same-permissions -xf "$source_dir/media.tar"
+if find "$work" -mindepth 1 ! -type f -print -quit | grep -q .; then
+  echo 'Unexpected objects in the media archive' >&2
+  exit 1
+fi
+pg_restore --no-owner --no-acl --file=- "$source_dir/database.dump" |\
+  psql -X --quiet --single-transaction -v ON_ERROR_STOP=1 --file=-
+[[ $(psql -XAt -v ON_ERROR_STOP=1 -c 'SELECT version_num FROM alembic_version') == "$(cat "$source_dir/revision")" ]]
+rmdir -- "$TENNISFANS_MEDIA_ROOT"
+mv -T -- "$work" "$TENNISFANS_MEDIA_ROOT"
+echo 'Restored database and media. Verify with the matching application release before switching traffic.'

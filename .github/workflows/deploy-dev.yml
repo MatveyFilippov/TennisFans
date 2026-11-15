@@ -1,0 +1,56 @@
+name: Deploy development
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [dev]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: tennisfans-development
+  cancel-in-progress: false
+jobs:
+  deploy:
+    name: Deploy checked dev revision
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    environment: development
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Check latest dev head
+        id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          actual=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/dev" --jq .object.sha)
+          [[ $(git rev-parse HEAD) == "$EXPECTED_SHA" ]]
+          if [[ $actual == "$EXPECTED_SHA" ]]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'A newer development commit superseded this deployment'
+          fi
+      - uses: actions/download-artifact@v7
+        if: steps.head.outputs.deploy == 'true'
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          name: tennisfans-${{ github.event.workflow_run.head_sha }}
+          path: artifact
+      - name: Deploy the artifact and check both services
+        if: steps.head.outputs.deploy == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_ROOT: ${{ secrets.DEPLOY_ROOT }}
+          CHECKED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: deploy/scripts/ship development "$CHECKED_SHA" artifact
