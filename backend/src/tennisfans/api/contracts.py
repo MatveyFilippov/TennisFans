@@ -108,6 +108,19 @@ class DisputeView(BaseModel):
     resolution_reason: str | None
 
 
+class RecordedResult(BaseModel):
+    played_at: datetime
+    score: Score
+
+
+class ResultRevision(BaseModel):
+    actor: PublicUser
+    reason: str
+    created_at: datetime
+    before: RecordedResult
+    after: RecordedResult
+
+
 class MatchView(BaseModel):
     id: UUID
     category: Literal["FRIENDLY", "TOURNAMENT"]
@@ -120,11 +133,13 @@ class MatchView(BaseModel):
     played_at: datetime | None
     scheduled_at: datetime | None
     author_id: UUID | None
+    author: PublicUser | None
     tournament_id: UUID | None
     version: int
     gallery: list[Photo] = Field(default_factory=list)
     rating: list[Point] = Field(default_factory=list)
     disputes: list[DisputeView] = Field(default_factory=list)
+    revisions: list[ResultRevision] = Field(default_factory=list)
 
 
 class TournamentSummary(BaseModel):
@@ -177,6 +192,8 @@ class FixtureView(BaseModel):
     position: int
     predecessor_a_id: UUID | None
     predecessor_b_id: UUID | None
+    side_a: list[PublicUser]
+    side_b: list[PublicUser]
     scheduled_at: datetime
     match: MatchView | None
 

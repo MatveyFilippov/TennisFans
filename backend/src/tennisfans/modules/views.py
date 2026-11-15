@@ -17,7 +17,7 @@ from tennisfans.db.competition import (
     Tournament,
 )
 from tennisfans.db.media import Media
-from tennisfans.db.results import Dispute, Match, RatingPoint
+from tennisfans.db.results import Dispute, Match, RatingPoint, Revision
 from tennisfans.domain.schedule import TeamMode
 from tennisfans.domain.scoring import Rules
 from tennisfans.domain.standings import Standing
@@ -82,7 +82,33 @@ def match_views(db: Session, matches: list[Match], *, details: bool = False) -> 
     if not ids:
         return []
     side_map = sides_many(db, ids)
-    users = users_for(db, {user for a, b in side_map.values() for user in a + b})
+    revisions = (
+        list(
+            db.scalars(
+                select(Revision)
+                .where(Revision.match_id.in_(ids))
+                .order_by(Revision.created_at, Revision.id)
+            )
+        )
+        if details
+        else []
+    )
+    player_ids = {user for a, b in side_map.values() for user in a + b}
+    player_ids.update(match.author_id for match in matches if match.author_id)
+    player_ids.update(revision.actor_id for revision in revisions)
+    users = users_for(db, player_ids)
+    changes: dict[UUID, list[dto.ResultRevision]] = defaultdict(list)
+    for revision in revisions:
+        if revision.before and revision.after:
+            changes[revision.match_id].append(
+                dto.ResultRevision(
+                    actor=users[revision.actor_id],
+                    reason=revision.reason,
+                    created_at=revision.created_at,
+                    before=dto.RecordedResult.model_validate(revision.before),
+                    after=dto.RecordedResult.model_validate(revision.after),
+                )
+            )
     sets = sets_many(db, ids)
     dates = {
         fixture.id: (fixture.scheduled_at, tournament_id)
@@ -138,11 +164,13 @@ def match_views(db: Session, matches: list[Match], *, details: bool = False) -> 
             played_at=match.played_at,
             scheduled_at=dates[match.fixture_id][0] if match.fixture_id else None,
             author_id=match.author_id,
+            author=users[match.author_id] if match.author_id else None,
             tournament_id=dates[match.fixture_id][1] if match.fixture_id else None,
             version=match.version,
             gallery=galleries[match.id],
             rating=ratings[match.id],
             disputes=disputes[match.id],
+            revisions=changes[match.id],
         )
         for match in matches
     ]
@@ -238,6 +266,8 @@ def tournament_view(db: Session, tournament: Tournament) -> dto.TournamentView:
                     position=fi.position,
                     predecessor_a_id=fi.predecessor_a_id,
                     predecessor_b_id=fi.predecessor_b_id,
+                    side_a=[users[p] for p in members[fi.entry_a_id]] if fi.entry_a_id else [],
+                    side_b=[users[p] for p in members[fi.entry_b_id]] if fi.entry_b_id else [],
                     scheduled_at=fi.scheduled_at,
                     match=descriptions.get(match.id) if match else None,
                 )

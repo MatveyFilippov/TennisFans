@@ -414,7 +414,7 @@ def test_oversubscription_and_atomic_reschedule(app):
     post(
         app,
         f"/matches/{match['id']}/result",
-        a,
+        admin,
         {**score(outcome="WALKOVER"), "version": match["version"]},
     )
     assert pub(app, root)["status"] == "COMPLETED"
@@ -504,7 +504,12 @@ def test_group_or_knockout_invalidation_and_resolution(app, format_):
     )
     assert app.get(API + f"/public/matches/{final['id']}").status_code == 404
     assert pub(app, root)["status"] == "ACTIVE"
-    assert pub(app, url)["score"]["winner"] == 1
+    replaced = pub(app, url)
+    assert replaced["score"]["winner"] == 1
+    revision = replaced["revisions"][0]
+    assert revision["before"]["score"]["winner"] == 0
+    assert revision["after"]["score"]["winner"] == 1
+    assert revision["actor"]["username"] == "admin"
     assert app.delete(API + root, headers=admin).status_code == 204
     assert pub(app, "/matches")["total"] == 0
     assert all(pub(app, f"/users/{player_id}")["player"]["rating"] == 1500 for player_id in members)
