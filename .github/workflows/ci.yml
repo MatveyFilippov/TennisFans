@@ -132,3 +132,44 @@ jobs:
         with:
           version: 0.9.21
       - run: uv run --locked --project backend --only-group docs mkdocs build --strict
+
+  deploy-development:
+    name: Deploy checked dev revision
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    needs: [quality, docs]
+    runs-on: ubuntu-24.04
+    environment: development
+    concurrency:
+      group: tennisfans-development
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Check latest dev head
+        id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          actual=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/dev" --jq .object.sha)
+          [[ $(git rev-parse HEAD) == "$GITHUB_SHA" ]]
+          if [[ $actual == "$GITHUB_SHA" ]]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'A newer development commit superseded this deployment'
+          fi
+      - uses: actions/download-artifact@v7
+        if: steps.head.outputs.deploy == 'true'
+        with:
+          name: tennisfans-${{ github.sha }}
+          path: artifact
+      - name: Deploy the artifact and check both services
+        if: steps.head.outputs.deploy == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_ROOT: ${{ secrets.DEPLOY_ROOT }}
+        run: deploy/scripts/ship development "$GITHUB_SHA" artifact

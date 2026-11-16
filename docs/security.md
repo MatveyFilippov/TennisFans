@@ -23,5 +23,5 @@ Use `journalctl` by unit, filter by the `X-Request-Id` returned by the API, and 
 | A due tournament needs action | Check capacity and fixed teams. Fill the roster and have an administrator set a new start time. |
 | Uploaded files fail | Compare multipart request size, image count per batch, actual still image format, decoded pixel limit, quota and reverse-proxy body limit. |
 | Frontend updated to an old API URL | Verify `/config.json`, service environment, and the current installed PWA update. |
-| Dev deploy did not run | Verify the workflow exists on `main`, the CI push run on `dev` is green, and the matching SHA artifact exists. |
+| Dev deploy did not run | Check that CI ran on a push to `dev`, both prerequisite jobs passed, the `development` environment permits `dev`, and the checked SHA is still the head of `dev`. |
 | Deployment fails | Inspect SSH known hosts, environment restrictions, systemd authorization, database revision, and the release smoke-test output. |
