@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+: "${DEPLOY_HOST:?Set DEPLOY_HOST in the configured GitHub Environment}"
+: "${DEPLOY_USER:?Set DEPLOY_USER in the configured GitHub Environment}"
+: "${DEPLOY_ROOT:?Set DEPLOY_ROOT in the configured GitHub Environment}"
+: "${DEPLOY_PRIVATE_KEY:?Set DEPLOY_PRIVATE_KEY in the configured GitHub Environment}"
+: "${DEPLOY_KNOWN_HOSTS:?Set DEPLOY_KNOWN_HOSTS in the configured GitHub Environment}"
+environment=${1:?Missing environment}
+sha=${2:?Missing checked commit}
+bundle=${3:?Missing build artifact directory}
+[[ $DEPLOY_USER =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]
+[[ $DEPLOY_HOST =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+[[ $DEPLOY_ROOT =~ ^/[a-zA-Z0-9_./-]+$ ]]
+[[ $sha =~ ^[a-f0-9]{40}$ ]]
+[[ $environment == development || $environment == production ]]
+(cd "$bundle" && sha256sum --check --strict SHA256SUMS)
+[[ $(tar -xOzf "$bundle/tennisfans.tar.gz" ./commit) == "$sha" ]]
+temporary=$(mktemp -d)
+trap 'rm -rf -- "$temporary"' EXIT
+printf '%s\n' "$DEPLOY_PRIVATE_KEY" > "$temporary/key"
+printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$temporary/known_hosts"
+remote="$DEPLOY_USER@$DEPLOY_HOST"
+ssh_flags=(-i "$temporary/key" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$temporary/known_hosts")
+stage=$(ssh "${ssh_flags[@]}" "$remote" 'mktemp -d /tmp/tennisfans-deploy.XXXXXXXX')
+[[ $stage =~ ^/tmp/tennisfans-deploy\.[a-zA-Z0-9]+$ ]]
+cleanup() {
+  # The validated temporary directory is expanded on the runner.
+  # shellcheck disable=SC2029
+  ssh "${ssh_flags[@]}" "$remote" "rm -rf -- '$stage'" || true
+  rm -rf -- "$temporary"
+}
+trap cleanup EXIT
+scp "${ssh_flags[@]}" "$bundle/tennisfans.tar.gz" deploy/scripts/{activate,pg-service} "$remote:$stage/"
+# The arguments were validated before client-side interpolation.
+# shellcheck disable=SC2029
+ssh "${ssh_flags[@]}" "$remote" "bash '$stage/activate' '$DEPLOY_ROOT' '$environment' '$stage/tennisfans.tar.gz' '$sha'"

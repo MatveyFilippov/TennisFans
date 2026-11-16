@@ -1,0 +1,33 @@
+site_name: TennisFans Documentation
+site_description: Play, organize, and self-host TennisFans
+repo_url: https://github.com/MatveyFilippov/TennisFans
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+nav:
+  - Home: index.md
+  - Use:
+      - Player, organizer, and admin guide: user-guide.md
+      - Scoring and Elo: scoring-and-elo.md
+      - Tournaments and brackets: tournaments-and-brackets.md
+  - Develop:
+      - Architecture: architecture.md
+      - REST API: api.md
+      - Development: development.md
+      - Contributing: contributing.md
+  - Operate:
+      - Configuration: configuration.md
+      - Ubuntu deployment: deployment-ubuntu.md
+      - Migrations and rollback: migrations.md
+      - Backup, restore, and migration: backup-and-restore.md
+      - Security and troubleshooting: security.md

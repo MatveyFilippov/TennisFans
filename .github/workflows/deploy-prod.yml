@@ -1,0 +1,53 @@
+name: Deploy production release
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+concurrency:
+  group: tennisfans-production
+  cancel-in-progress: false
+jobs:
+  verify:
+    name: Verify stable main release
+    if: github.event.release.prerelease == false && github.event.release.draft == false
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify SemVer tag and main ancestry
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          [[ $RELEASE_TAG =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ $(git rev-parse "refs/tags/$RELEASE_TAG^{commit}") == "$GITHUB_SHA" ]]
+          git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main
+  check:
+    name: Recheck the tagged revision
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+  deploy:
+    name: Deploy tested stable release
+    needs: check
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v7
+        with:
+          name: tennisfans-${{ github.sha }}
+          path: artifact
+      - name: Deploy release artifact and verify both services
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_ROOT: ${{ secrets.DEPLOY_ROOT }}
+        run: deploy/scripts/ship production "$GITHUB_SHA" artifact
