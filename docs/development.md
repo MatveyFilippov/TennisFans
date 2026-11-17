@@ -1,5 +1,26 @@
 # Development
 
+## UI and UX skills in Codex
+
+Open the TennisFans checkout in Codex. Project skills live in `.agents/skills/` and are available from the repository root and its subdirectories. In a prompt, type `$` to select a skill, then name the screen or flow and describe the deliverable. Use `/skills` to list skills in the CLI. If the checkout has just changed and a skill is missing, restart Codex. See [OpenAI's skills documentation](https://learn.chatgpt.com/docs/build-skills).
+
+| Skill | Example prompt |
+| --- | --- |
+| `$emil-design-eng` | Review hover, keyboard focus, and motion in the match result dialog. Return findings without editing files. |
+| `$prototype` | Build three isolated variants of the tournament card for me to compare. Keep integration pending until I pick a variant. |
+| `$break-ui` | Stress-test the standings with synthetic data in a local preview. Report layout failures before applying fixes. |
+| `$mobile-native` | Audit the result form for touch feedback, keyboard overlap, and safe areas. Identify what needs testing on a phone. |
+| `$learn-taste` | Propose rules based on the design corrections in this conversation. Wait for my approval before recording the rules. |
+| `$frontend-skill` | Propose a visual direction, content hierarchy, and interaction ideas for the public tournament page for my review. |
+
+### Sources and audit
+
+- The five Emil Kowalski skills come from [emilkowalski/skills at `64eb3de`](https://github.com/emilkowalski/skills/tree/64eb3deb9a5fbfa041faf783e0bc3fd635872e9c) under MIT. The checkout includes `PICKER.md` and `CATALOG.md`, plus the choreography guide and recipes as local references for `emil-design-eng`. `prototype` and `learn-taste` retain their explicit-only invocation policy through Codex metadata.
+- The curated installer no longer resolves `frontend-skill` by name. The project includes [the original package from `openai/skills` at `82d2c5b`](https://github.com/openai/skills/tree/82d2c5b44ac234ec0f204f647562a4349d90ef43/skills/.curated/frontend-skill) under Apache-2.0, checked against the [Frontend Skill block in the OpenAI article](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4). Both upstream licenses are included.
+- The packages contain guidance and examples, with no executable scripts or required application libraries. The Motion, Framer Motion, and `react-use-measure` examples are optional. Keep the prototype picker's HTML static or render with React, and render stress-test fixtures as literal text. For mobile testing, use a local preview with test data and limit any LAN access to a trusted test network. For `learn-taste`, use this conversation or prior sessions explicitly named in the task.
+
+## Local setup and checks
+
 Use Python 3.12, uv 0.9.21, Node.js 24, npm, and a dedicated PostgreSQL 16+ database. Keep runtime state outside Git.
 
 ```bash
