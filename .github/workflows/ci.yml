@@ -71,8 +71,15 @@ jobs:
         run: |
           uv export --locked --project backend --no-dev --no-emit-project --output-file "$RUNNER_TEMP/runtime.txt"
           uv run --locked --project backend pip-audit --disable-pip --require-hashes -r "$RUNNER_TEMP/runtime.txt"
-          npm audit --prefix frontend --audit-level=moderate
+          node --test --test-isolation=none .github/scripts/frontend-audit.test.mjs
+          node .github/scripts/frontend-audit.mjs "$RUNNER_TEMP/frontend-npm-audit"
           shellcheck deploy/scripts/*
+      - uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: frontend-npm-audit-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/frontend-npm-audit
+          if-no-files-found: ignore
       - name: Frontend contract, typing, lint and coverage
         run: |
           uv run --locked --project backend tennisfans openapi backend/openapi.json
