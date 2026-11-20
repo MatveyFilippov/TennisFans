@@ -71,15 +71,15 @@ jobs:
         run: |
           uv export --locked --project backend --no-dev --no-emit-project --output-file "$RUNNER_TEMP/runtime.txt"
           uv run --locked --project backend pip-audit --disable-pip --require-hashes -r "$RUNNER_TEMP/runtime.txt"
-          node --test --test-isolation=none .github/scripts/frontend-audit.test.mjs
-          node .github/scripts/frontend-audit.mjs "$RUNNER_TEMP/frontend-npm-audit"
           shellcheck deploy/scripts/*
-      - uses: actions/upload-artifact@v6
-        if: ${{ !cancelled() }}
-        with:
-          name: frontend-npm-audit-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/frontend-npm-audit
-          if-no-files-found: ignore
+      - name: Audit all frontend dependencies
+        run: npm audit --prefix frontend --audit-level=moderate --offline=false --include=dev --include=optional --include=peer
+      - name: Audit production frontend dependencies
+        run: npm audit --prefix frontend --audit-level=moderate --offline=false --omit=dev --include=optional --include=peer
+      - name: Keep picomatch out of frontend production dependencies
+        run: |
+          npm query --prefix frontend '#picomatch:not(.dev)' --package-lock-only --expect-result-count=0
+          npm query --prefix frontend '#picomatch:not(.dev)' --package-lock-only=false --expect-result-count=0
       - name: Frontend contract, typing, lint and coverage
         run: |
           uv run --locked --project backend tennisfans openapi backend/openapi.json
