@@ -26,7 +26,7 @@ export function MatchIndex() {
     discipline, category, player_id: paramsFromUrl.get('player') ?? undefined, offset,
   }))
   return <>
-    <Heading title={t('matches')} action={<Link className="button primary" to="/friendlies/new">{t('newFriendly')}</Link>} />
+    <Heading title={t('matches')} subtitle={t('matchIntro')} action={<Link className="button primary" to="/friendlies/new">{t('newFriendly')}</Link>} />
     <div className="toolbar">
       <label>{t('category')}<select value={category} onChange={e => { setCategory(e.target.value); setOffset(0) }}>
         {['', 'FRIENDLY', 'TOURNAMENT'].map(key => <option value={key} key={key}>{t(key || 'all')}</option>)}</select></label>
@@ -62,8 +62,8 @@ export function NewFriendly({ account }: { account: Account }) {
     })
   }
   return <>
-    <Heading title={t('newFriendly')} />
-    <form className="card-form" onSubmit={submit}>
+    <Heading title={t('newFriendly')} subtitle={t('friendlyIntro')} />
+    <form className="card-form match-form" onSubmit={submit}>
       <label>{t('discipline')}<select value={discipline} onChange={e => setDiscipline(e.target.value as Model['Discipline'])}>
         <option value="SINGLES">{t('SINGLES')}</option><option value="DOUBLES">{t('DOUBLES')}</option>
       </select></label>
@@ -178,9 +178,9 @@ function MatchDetail({ match, account }: { match: Match, account: Account | null
     <Heading title={t(match.category)} action={<Badge value={match.status} />} />
     <div className="stack">
       <div className="match-summary panel">
-        <div><h2>{t('sideA')}</h2><UserList users={match.a} /></div>
+        <div className="match-side"><p className="eyebrow">{t('sideA')}</p><UserList users={match.a} /></div>
         <div className="score-display"><ScoreText match={match} /></div>
-        <div><h2>{t('sideB')}</h2><UserList users={match.b} /></div>
+        <div className="match-side"><p className="eyebrow">{t('sideB')}</p><UserList users={match.b} /></div>
       </div>
       <div className="meta"><Badge value={match.discipline} /><Badge value={match.rules.format ?? 'STANDARD_MATCH'} />
         {timestamp && <time>{dateTime(language, timestamp)}</time>}

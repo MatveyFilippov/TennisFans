@@ -57,7 +57,7 @@ export function TournamentForm({ tournament }: { tournament?: Tour }) {
   }
   return <>
     <Heading title={t(tournament ? 'editTournament' : 'newTournament')} />
-    <form className="card-form" onSubmit={submit}>
+    <form className="card-form tournament-form" onSubmit={submit}>
       <label>{t('title')}<input name="title" required maxLength={120} defaultValue={config?.title} /></label>
       <label>{t('description')}<textarea name="description" maxLength={5000} defaultValue={config?.description} /></label>
       <div className="form-grid">
@@ -259,8 +259,15 @@ function TournamentDetail({ tournament, account }: { tournament: Tour, account: 
   const prestart = ['SCHEDULED', 'ACTION_REQUIRED'].includes(tournament.status)
   const registered = tournament.roster.some(u => u.id === me?.id)
   return <>
-    {tournament.cover_id && <img className="tour-cover" src={photoUrl(tournament.cover_id, 'full')} alt="" crossOrigin="anonymous" />}
-    <Heading title={tournament.title} subtitle={dateTime(language, tournament.starts_at, tournament.timezone)} action={<Badge value={tournament.status} />} />
+    <div className={`tournament-heading${tournament.cover_id ? ' with-cover' : ''}`}>
+      <Heading title={tournament.title} subtitle={dateTime(language, tournament.starts_at, tournament.timezone)} action={<Badge value={tournament.status} />} />
+      {tournament.cover_id && <img className="tour-cover" src={photoUrl(tournament.cover_id, 'full')} alt="" crossOrigin="anonymous" />}
+    </div>
+    <nav className="page-tabs" aria-label={tournament.title}>
+      <a href="#roster">{t('roster')}</a><a href="#schedule">{t('schedule')}</a>
+      {!!tournament.gallery.length && <a href="#gallery">{t('gallery')}</a>}
+      {manager && <a href="#management">{t('manage')}</a>}
+    </nav>
     <div className="stack">
       {tournament.description && <p className="description">{tournament.description}</p>}
       <div className="meta"><Badge value={tournament.format} /><Badge value={tournament.discipline} />
@@ -270,7 +277,7 @@ function TournamentDetail({ tournament, account }: { tournament: Tour, account: 
       </div>
       {tournament.status === 'ACTION_REQUIRED' && <p className="alert" role="status">{t('reschedule')}</p>}
       {me && !registered && prestart && <Signup tournament={tournament} />}
-      <div className="form-grid">
+      <div className="form-grid" id="roster">
         <Panel title={t('roster')}><UserList users={tournament.roster} />
           {!!tournament.teams.length && <ul className="clean-list">{tournament.teams.map(team => <li className="team-label" key={team[0].id}>
             {team.map(player => <PlayerLink user={player} key={player.id} />)}
@@ -279,15 +286,15 @@ function TournamentDetail({ tournament, account }: { tournament: Tour, account: 
       </div>
       {!!tournament.standings.length && <Panel title={t('standings')}><Standings rows={tournament.standings} /></Panel>}
       {tournament.groups.map(group => <Panel key={group.id} title={`${t('group')} ${group.position}`}><Standings rows={group.standings} /></Panel>)}
-      <Bracket tournament={tournament} />
+      <div id="schedule"><Bracket tournament={tournament} /></div>
       {!tournament.standings.length && !!tournament.placements.length && <Panel title={t('placements')}><ul className="clean-list">
         {tournament.placements.map(place => <li key={place.players[0].id} className="split">
           <strong>{rankRange(place.rank, place.rank_end)}</strong><div className="team-label">
             {place.players.map(player => <PlayerLink user={player} key={player.id} />)}</div></li>)}
       </ul></Panel>}
       {manager && <Upload kind="tournament" owner={tournament.id} />}
-      <Gallery photos={tournament.gallery} admin={admin} tournamentId={tournament.id} />
-      {manager && <Management tournament={tournament} admin={admin} prestart={prestart} />}
+      {!!tournament.gallery.length && <div id="gallery"><Gallery photos={tournament.gallery} admin={admin} tournamentId={tournament.id} /></div>}
+      {manager && <section className="management" id="management"><Management tournament={tournament} admin={admin} prestart={prestart} /></section>}
     </div>
   </>
 }

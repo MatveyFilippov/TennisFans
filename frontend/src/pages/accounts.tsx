@@ -4,6 +4,7 @@ import { params, useAction, useData, type Account, type Model, type Page } from 
 import { Upload } from '../components/media'
 import { Alert, Avatar, Badge, Data, Empty, Heading, Pager, Panel } from '../components/ui'
 import { dateTime, useI18n } from '../i18n'
+import courtPhoto from '../assets/court.webp'
 
 export function LoginPage({ create = false }: { create?: boolean }) {
   const { t } = useI18n()
@@ -26,7 +27,7 @@ export function LoginPage({ create = false }: { create?: boolean }) {
       },
     })
   }
-  return <div className="narrow">
+  return <div className="auth-layout"><div className="auth-content">
     <Heading title={t(create ? 'register' : 'signIn')} />
     <form className="card-form" onSubmit={submit}>
       <label>{t('username')}<input name="username" autoComplete="username" required pattern="[a-zA-Z0-9_\-]{3,32}" /></label>
@@ -38,6 +39,7 @@ export function LoginPage({ create = false }: { create?: boolean }) {
       <button className="primary" disabled={mutation.isPending}>{t(mutation.isPending ? 'saving' : create ? 'register' : 'signIn')}</button>
       <Link to={create ? '/login' : '/register'} state={location.state}>{t(create ? 'signIn' : 'register')}</Link>
     </form>
+    </div><img className="auth-photo" src={courtPhoto} alt="" />
   </div>
 }
 
@@ -71,13 +73,18 @@ export function AccountPage({ account }: { account: Account }) {
   const [offset, setOffset] = useState(0)
   const notifications = useData<Page<Model['NotificationView']>>('/account/notifications' + params({ offset }), !account.password_change_required)
   return <>
-    <Heading title={t('account')} action={<button onClick={() => logout.mutate({ path: '/auth/logout' }, {
+    <Heading title={t('account')} subtitle={t('accountIntro')} action={<button onClick={() => logout.mutate({ path: '/auth/logout' }, {
       onSuccess: () => navigate('/'),
     })} disabled={logout.isPending}>{t('logout')}</button>} />
     <Alert error={logout.error} />
-    <div className="stack">
+    <div className="account-layout">
+      <nav className="section-nav" aria-label={t('account')}>
+        {!account.password_change_required && <><a href="#profile">{t('profile')}</a><a href="#notifications">{t('notifications')}</a></>}
+        <a href="#password">{t('changePassword')}</a>
+      </nav>
+      <div className="stack">
       {!account.password_change_required && <>
-        <Panel title={t('profile')} action={<Link to={`/players/${user.id}`}>{t('viewProfile')}</Link>}>
+        <section id="profile"><Panel title={t('profile')} action={<Link to={`/players/${user.id}`}>{t('viewProfile')}</Link>}>
           <Avatar user={user} />
           <form className="card-form no-frame" onSubmit={event => {
             event.preventDefault()
@@ -90,8 +97,8 @@ export function AccountPage({ account }: { account: Account }) {
             <button className="primary" disabled={edit.isPending}>{t('save')}</button>
           </form>
           <Upload kind="user" owner={user.id} multiple={false} />
-        </Panel>
-        <Panel title={t('notifications')}>
+        </Panel></section>
+        <section id="notifications"><Panel title={t('notifications')}>
           <Data query={notifications}>{data => <>
             {data.items.length ? <ul className="clean-list">{data.items.map(item => <li key={item.id}>
               <time>{dateTime(language, item.created_at)}</time>
@@ -100,9 +107,10 @@ export function AccountPage({ account }: { account: Account }) {
             </li>)}</ul> : <Empty />}
             <Pager offset={offset} total={data.total} onChange={setOffset} />
           </>}</Data>
-        </Panel>
+        </Panel></section>
       </>}
-      <Panel title={t('changePassword')}><PasswordForm restricted={account.password_change_required} /></Panel>
+      <section id="password"><Panel title={t('changePassword')}><PasswordForm restricted={account.password_change_required} /></Panel></section>
+      </div>
     </div>
   </>
 }
@@ -154,7 +162,7 @@ export function AdminPage() {
   const action = useAction()
   const [confirm, setConfirm] = useState(false)
   return <>
-    <Heading title={t('admin')} action={<Link className="button" to="/admin/audit">{t('audit')}</Link>} />
+    <Heading title={t('adminTitle')} subtitle={t('adminIntro')} action={<Link className="button" to="/admin/audit">{t('audit')}</Link>} />
     <div className="actions">
       {confirm ? <>
         <button className="primary" disabled={action.isPending} onClick={() => action.mutate({ path: '/admin/ratings/rebuild' },
@@ -178,7 +186,7 @@ export function AuditPage() {
   const [offset, setOffset] = useState(0)
   const query = useData<Page<Model['AuditView']>>('/admin/audit' + params({ action: filter, offset }))
   return <>
-    <Heading title={t('audit')} />
+    <Heading title={t('audit')} subtitle={t('auditIntro')} />
     <div className="toolbar"><label>{t('action')}<input value={filter} onChange={event => { setFilter(event.target.value); setOffset(0) }} /></label></div>
     <Data query={query}>{data => <>
       {data.items.length ? <ul className="clean-list">{data.items.map(item => <li key={item.id} className="audit-row">
