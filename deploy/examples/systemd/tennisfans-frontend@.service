@@ -1,0 +1,21 @@
+[Unit]
+Description=TennisFans web interface (%i)
+After=network.target
+
+[Service]
+Type=simple
+User=tennisfans-%i
+Group=tennisfans-%i
+WorkingDirectory=/opt/tennisfans/%i/current/frontend
+EnvironmentFile=/etc/tennisfans/%i/frontend.env
+EnvironmentFile=/opt/tennisfans/%i/current/build.env
+ExecStart=/usr/local/bin/node /opt/tennisfans/%i/current/frontend/server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

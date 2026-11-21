@@ -1,0 +1,18 @@
+tennisfans.ru {
+    encode gzip
+    request_body {
+        max_size 64MB
+    }
+    @backend path /api/* /docs /openapi.json /redoc /health/ready
+    reverse_proxy @backend 127.0.0.1:8000
+    reverse_proxy 127.0.0.1:5173
+}
+dev.tennisfans.ru {
+    encode gzip
+    request_body {
+        max_size 64MB
+    }
+    @backend path /api/* /docs /openapi.json /redoc /health/ready
+    reverse_proxy @backend 127.0.0.1:8001
+    reverse_proxy 127.0.0.1:5174
+}

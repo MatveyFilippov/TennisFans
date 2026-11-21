@@ -1,0 +1,182 @@
+name: CI
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Application quality and PostgreSQL
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: tennisfans
+          POSTGRES_PASSWORD: ci-ephemeral
+          POSTGRES_DB: tennisfans_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tennisfans -d tennisfans_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TENNISFANS_TEST_DATABASE_URL: postgresql+psycopg://tennisfans:ci-ephemeral@127.0.0.1:5432/tennisfans_test
+      TENNISFANS_DATABASE_URL: postgresql+psycopg://tennisfans:ci-ephemeral@127.0.0.1:5432/tennisfans_e2e
+      TENNISFANS_ENVIRONMENT: test
+      TENNISFANS_MEDIA_ROOT: /tmp/tennisfans-e2e-media
+      TENNISFANS_SESSION_SECRET: CI-only-session-secret-for-ephemeral-database
+      TEST_ADMIN_PASSWORD: CI-only-admin-password
+      PGPASSWORD: ci-ephemeral
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: 0.9.21
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.11.1'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked dependencies
+        run: |
+          uv sync --locked --project backend
+          npm ci --prefix frontend
+          command -v psql
+          command -v pg_dump
+          command -v pg_restore
+          command -v shellcheck
+      - name: Backend lint and type checking
+        working-directory: backend
+        run: |
+          uv run --locked ruff check .
+          uv run --locked ruff format --check .
+          uv run --locked mypy src
+      - name: PostgreSQL integration and domain coverage
+        working-directory: backend
+        run: |
+          uv run --locked pytest             --cov=tennisfans.domain --cov=tennisfans.modules.brackets             --cov=tennisfans.modules.ratings --cov=tennisfans.modules.tournaments             --cov=tennisfans.modules.matches --cov-report=term-missing --cov-fail-under=85
+      - name: Dependency and deployment script checks
+        run: |
+          uv export --locked --project backend --no-dev --no-emit-project --output-file "$RUNNER_TEMP/runtime.txt"
+          uv run --locked --project backend pip-audit --disable-pip --require-hashes -r "$RUNNER_TEMP/runtime.txt"
+          shellcheck deploy/scripts/*
+      - name: Audit all frontend dependencies
+        run: npm audit --prefix frontend --audit-level=moderate --offline=false --include=dev --include=optional --include=peer
+      - name: Audit production frontend dependencies
+        run: npm audit --prefix frontend --audit-level=moderate --offline=false --omit=dev --include=optional --include=peer
+      - name: Keep picomatch out of frontend production dependencies
+        run: |
+          npm query --prefix frontend '#picomatch:not(.dev)' --package-lock-only --expect-result-count=0
+          npm query --prefix frontend '#picomatch:not(.dev)' --package-lock-only=false --expect-result-count=0
+      - name: Frontend contract, typing, lint and coverage
+        run: |
+          uv run --locked --project backend tennisfans openapi backend/openapi.json
+          npm run generate-api --prefix frontend
+          git diff --exit-code -- frontend/src/schema.ts
+          npm run lint --prefix frontend
+          npm run coverage --prefix frontend
+          npm run build --prefix frontend
+      - name: Prepare an empty browser database and Chromium
+        run: |
+          createdb -h 127.0.0.1 -U tennisfans tennisfans_e2e
+          printf '%s\n' "$TEST_ADMIN_PASSWORD" | uv run --locked --project backend tennisfans admin create browser-admin --password-stdin
+          uv run --locked --project backend tennisfans db check
+          cd frontend
+          npx playwright install --with-deps chromium
+      - name: Playwright desktop, mobile and offline
+        run: npm run e2e --prefix frontend
+      - uses: actions/upload-artifact@v6
+        with:
+          name: responsive-screenshots
+          path: frontend/test-results/*/home.png
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: playwright-diagnostics
+          path: frontend/test-results
+          if-no-files-found: ignore
+      - name: Package the checked revision
+        run: |
+          install -d bundle/backend bundle/frontend bundle/deploy artifact
+          cp -r backend/{pyproject.toml,uv.lock,src} bundle/backend/
+          find bundle -type d -name __pycache__ -prune -exec rm -rf {} +
+          cp -r frontend/{dist,server.mjs} bundle/frontend/
+          cp -r deploy/scripts bundle/deploy/
+          git rev-parse HEAD > bundle/commit
+          tar -C bundle -czf artifact/tennisfans.tar.gz .
+          (cd artifact && sha256sum tennisfans.tar.gz > SHA256SUMS)
+      - uses: actions/upload-artifact@v6
+        with:
+          name: tennisfans-${{ github.sha }}
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 14
+
+  docs:
+    name: Documentation build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: 0.9.21
+      - run: uv run --locked --project backend --only-group docs mkdocs build --strict
+
+  deploy-development:
+    name: Deploy checked dev revision
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    needs: [quality, docs]
+    runs-on: ubuntu-24.04
+    environment: development
+    concurrency:
+      group: tennisfans-development
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Check latest dev head
+        id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          actual=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/dev" --jq .object.sha)
+          [[ $(git rev-parse HEAD) == "$GITHUB_SHA" ]]
+          if [[ $actual == "$GITHUB_SHA" ]]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'A newer development commit superseded this deployment'
+          fi
+      - uses: actions/download-artifact@v7
+        if: steps.head.outputs.deploy == 'true'
+        with:
+          name: tennisfans-${{ github.sha }}
+          path: artifact
+      - name: Deploy the artifact and check both services
+        if: steps.head.outputs.deploy == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_ROOT: ${{ secrets.DEPLOY_ROOT }}
+        run: deploy/scripts/ship development "$GITHUB_SHA" artifact

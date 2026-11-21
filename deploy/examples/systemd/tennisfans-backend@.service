@@ -1,0 +1,23 @@
+[Unit]
+Description=TennisFans API (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tennisfans-%i
+Group=tennisfans-%i
+WorkingDirectory=/opt/tennisfans/%i/current/backend
+EnvironmentFile=/etc/tennisfans/%i/backend.env
+EnvironmentFile=/opt/tennisfans/%i/current/build.env
+ExecStart=/opt/tennisfans/%i/current/backend/.venv/bin/tennisfans serve
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/tennisfans/%i/media
+
+[Install]
+WantedBy=multi-user.target
