@@ -13,15 +13,13 @@ export function HomePage() {
   const tournaments = useQuery({
     queryKey: ['/public/tournaments?status=SCHEDULED', 'upcoming'],
     queryFn: async () => {
-      const items: Model['TournamentSummary'][] = []
-      let total = Infinity
-      while (items.length < total) {
-        const page = await request<Page<Model['TournamentSummary']>>(`/public/tournaments?status=SCHEDULED&limit=100&offset=${items.length}`)
-        if (!page.items.length) break
-        items.push(...page.items)
-        total = page.total
-      }
-      return items.sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).slice(0, 4)
+      const path = '/public/tournaments?status=SCHEDULED&limit=4'
+      const first = await request<Page<Model['TournamentSummary']>>(`${path}&offset=0`)
+      // The API sorts latest first, so its final four entries are the nearest.
+      const page = first.total > 4
+        ? await request<Page<Model['TournamentSummary']>>(`${path}&offset=${first.total - 4}`)
+        : first
+      return [...page.items].reverse()
     },
   })
   const ratings = useData<Page<Model['Leader']>>('/public/ratings?limit=3')
