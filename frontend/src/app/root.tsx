@@ -24,6 +24,7 @@ function Preferences({ children }: { children: ReactNode }) {
     document.documentElement.dataset.theme = theme
   }, [language, theme])
   return <I18n.Provider value={{ language, t }}>
+    {children}
     <div className="preferences">
       <label><span className="sr-only">{t('language')}</span>
         <select value={language} onChange={event => {
@@ -44,7 +45,6 @@ function Preferences({ children }: { children: ReactNode }) {
         </select>
       </label>
     </div>
-    {children}
   </I18n.Provider>
 }
 
@@ -116,7 +116,7 @@ function Navigation({ account }: { account: Account | null }) {
     <div className="nav-inner">
       <Link to="/" className="brand"><img width="38" height="38" src="/icons/icon-192.png" alt="" />{t('brand')}</Link>
       <nav className="main-nav" aria-label={t('mainNavigation')}>
-        {([['ratings', '/ratings'], ['players', '/players'], ['matches', '/matches'], ['tournaments', '/tournaments']]).map(([label, path]) =>
+        {([['matches', '/matches'], ['tournaments', '/tournaments'], ['players', '/players'], ['ratings', '/ratings']]).map(([label, path]) =>
           <NavLink to={path} key={path}>{t(label)}</NavLink>)}
       </nav>
       <nav className="account-nav" aria-label={t('account')}>
@@ -144,7 +144,7 @@ function Body() {
     window.scrollTo(0, 0)
     document.getElementById('content')?.focus({ preventScroll: true })
   }, [location.pathname])
-  return <>
+  return <div className={`app-shell${location.pathname === '/' ? ' home-shell' : ''}`}>
     <Navigation account={account} />
     <StatusLine />
     <main id="content" tabIndex={-1}>
@@ -169,7 +169,10 @@ function Body() {
         <Route path="*" element={<Heading title={t('notFound')} action={<Link to="/">{t('home')}</Link>} />} />
       </Routes>
     </main>
-  </>
+    <footer className="site-footer"><div className="footer-inner">
+      <Link to="/" className="brand">{t('brand')}</Link><p>{t('footerLine')}</p>
+    </div></footer>
+  </div>
 }
 
 export function Root() {

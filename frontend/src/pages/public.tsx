@@ -1,33 +1,50 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { params, photoUrl, useData, type Match, type Model, type Page, type PublicUser } from '../api'
+import { params, photoUrl, request, useData, type Match, type Model, type Page, type PublicUser } from '../api'
 import { dateTime, rankRange, useI18n } from '../i18n'
 import { Gallery } from '../components/media'
-import { Avatar, Badge, Chart, Data, Empty, Heading, historySeries, MatchList, Pager, Panel, PlayerLink, PlayerPicker, UserList } from '../components/ui'
+import { Avatar, Badge, Chart, Data, DateMarker, Empty, Heading, historySeries, MatchList, Pager, Panel, PlayerLink, PlayerPicker } from '../components/ui'
+import courtPhoto from '../assets/court.webp'
 
 export function HomePage() {
   const { t } = useI18n()
   const matches = useData<Page<Match>>('/public/matches?limit=4')
-  const tournaments = useData<Page<Model['TournamentSummary']>>('/public/tournaments?status=SCHEDULED&limit=4')
-  const ratings = useData<Page<Model['Leader']>>('/public/ratings?limit=5')
+  const tournaments = useQuery({
+    queryKey: ['/public/tournaments?status=SCHEDULED', 'upcoming'],
+    queryFn: async () => {
+      const path = '/public/tournaments?status=SCHEDULED&limit=4'
+      const first = await request<Page<Model['TournamentSummary']>>(`${path}&offset=0`)
+      // The API sorts latest first, so its final four entries are the nearest.
+      const page = first.total > 4
+        ? await request<Page<Model['TournamentSummary']>>(`${path}&offset=${first.total - 4}`)
+        : first
+      return [...page.items].reverse()
+    },
+  })
+  const ratings = useData<Page<Model['Leader']>>('/public/ratings?limit=3')
   return <>
     <section className="hero">
+      <img className="hero-photo" src={courtPhoto} alt="" fetchPriority="high" />
       <div className="hero-inner">
-        <h1>{t('slogan')}</h1><p>{t('intro')}</p>
-        <div className="actions"><Link className="button primary" to="/friendlies/new">{t('newFriendly')}</Link>
-          <Link className="button hero-secondary" to="/tournaments">{t('tournaments')}</Link></div>
+        <p className="eyebrow">{t('amateurTennis')}</p>
+        <h1>{t('brand')}</h1><h2>{t('slogan')}</h2><p>{t('intro')}</p>
+        <div className="actions"><Link className="button primary" to="/friendlies/new">{t('recordMatch')} <span aria-hidden="true">↗</span></Link>
+          <Link className="button hero-secondary" to="/tournaments">{t('browseTournaments')} <span aria-hidden="true">↗</span></Link></div>
       </div>
-      <div className="court" aria-hidden="true"><div /><span /></div>
     </section>
-    <div className="dashboard">
+    <div className="club-feed">
+      <h2 className="feed-heading">{t('onCourt')}</h2>
+      <Panel title={t('upcoming')} action={<Link to="/tournaments">{t('viewAll')} <span aria-hidden="true">↗</span></Link>}>
+        <Data query={tournaments}>{data => <TournamentCards items={data} />}</Data>
+      </Panel>
       <Panel title={t('recent')} action={<Link to="/matches">{t('viewAll')}</Link>}>
         <Data query={matches}>{data => <MatchList items={data.items} />}</Data>
       </Panel>
       <Panel title={t('topPlayers')} action={<Link to="/ratings">{t('viewAll')}</Link>}>
-        <Data query={ratings}>{data => <Ranking rows={data.items} compact />}</Data>
-      </Panel>
-      <Panel title={t('upcoming')} action={<Link to="/tournaments">{t('viewAll')}</Link>}>
-        <Data query={tournaments}>{data => <TournamentCards items={data.items} />}</Data>
+        <Data query={ratings}>{data => data.items.length ? <ol className="leader-strip">{data.items.map(row => <li key={row.id}>
+          <span className="muted">{row.rank}.</span><PlayerLink user={row} /><strong>{Math.round(row.rating)}</strong>
+        </li>)}</ol> : <Empty />}</Data>
       </Panel>
     </div>
   </>
@@ -35,14 +52,17 @@ export function HomePage() {
 
 export function TournamentCards({ items }: { items: Model['TournamentSummary'][] }) {
   const { t, language } = useI18n()
-  if (!items.length) return <Empty />
+  if (!items.length) return <Empty message={t('tournamentEmpty')} />
   return <ul className="tour-list">{items.map(item => <li key={item.id}>
-    {item.cover_id && <img src={photoUrl(item.cover_id)} alt="" loading="lazy" crossOrigin="anonymous" />}
-    <div><Link to={`/tournaments/${item.id}`}>{item.title}</Link>
-      <p className="muted"><time>{dateTime(language, item.starts_at, item.timezone)}</time></p>
-      <div className="meta"><Badge value={item.status} /><Badge value={item.discipline} />
+    <DateMarker value={item.starts_at} timeZone={item.timezone} />
+    <div className="tour-body">
+      {item.cover_id && <Link to={`/tournaments/${item.id}`} className="tour-thumb" tabIndex={-1} aria-hidden="true"><img src={photoUrl(item.cover_id)} alt="" loading="lazy" crossOrigin="anonymous" /></Link>}
+      <div className="tour-info"><Link className="tour-title" to={`/tournaments/${item.id}`}>{item.title} <span aria-hidden="true">↗</span></Link>
+      <p className="muted"><time dateTime={item.starts_at}>{dateTime(language, item.starts_at, item.timezone)}</time></p>
+      <div className="meta"><Badge value={item.status} /><span>{t(item.discipline)}</span>
         {item.applications_open && <span>{t('openApplications')}</span>}
         <span aria-label={t('accepted')}>{item.accepted}/{item.capacity}</span>
+      </div>
       </div>
     </div>
   </li>)}</ul>
@@ -55,7 +75,7 @@ export function TournamentIndex({ admin }: { admin: boolean }) {
   const [offset, setOffset] = useState(0)
   const query = useData<Page<Model['TournamentSummary']>>('/public/tournaments' + params({ q: search, status, offset }))
   return <>
-    <Heading title={t('tournaments')} action={admin && <Link className="button primary" to="/tournaments/new">{t('newTournament')}</Link>} />
+    <Heading title={t('tournaments')} subtitle={t('tournamentIntro')} action={admin && <Link className="button primary" to="/tournaments/new">{t('newTournament')}</Link>} />
     <div className="toolbar">
       <label>{t('search')}<input type="search" value={search} onChange={e => { setSearch(e.target.value); setOffset(0) }} /></label>
       <label>{t('filterStatus')}<select value={status} onChange={e => { setStatus(e.target.value); setOffset(0) }}>
@@ -69,7 +89,7 @@ function Ranking({ rows, compact = false }: { rows: Model['Leader'][], compact?:
   const { t, language } = useI18n()
   const number = new Intl.NumberFormat(language)
   if (!rows.length) return <Empty />
-  return <div className="table-wrap" tabIndex={0} aria-label={t('ratings')} role="region"><table className={compact ? 'compact-ranking' : undefined}>
+  return <div className="table-wrap ranking-wrap" tabIndex={0} aria-label={t('ratings')} role="region"><table className={compact ? 'compact-ranking' : 'ranking'}>
     <thead><tr>{(compact ? ['rank', 'PLAYER', 'elo'] : ['rank', 'PLAYER', 'elo', 'matches', 'wins', 'losses', 'winRate', 'trend'])
       .map(key => <th scope="col" key={key}>{t(key)}</th>)}</tr></thead>
     <tbody>{rows.map(row => <tr key={row.id}>
@@ -88,11 +108,14 @@ export function Directory({ ratings = false }: { ratings?: boolean }) {
   const query = useData<Page<PublicUser>>('/public/users' + params({ q: search, offset }), !ratings)
   const leaders = useData<Page<Model['Leader']>>('/public/ratings' + params({ q: search, offset }), ratings)
   return <>
-    <Heading title={t(ratings ? 'ratings' : 'players')} action={<Link className="button" to="/compare">{t('compare')}</Link>} />
+    <Heading title={t(ratings ? 'ratings' : 'players')} subtitle={t(ratings ? 'ratingIntro' : 'playerIntro')} action={<Link className="button" to="/compare">{t('compare')}</Link>} />
     <div className="toolbar"><label>{t('search')}<input type="search" value={search} onChange={e => { setSearch(e.target.value); setOffset(0) }} /></label></div>
     {ratings
       ? <Data query={leaders}>{data => <><Ranking rows={data.items} /><Pager offset={offset} total={data.total} onChange={setOffset} /></>}</Data>
-      : <Data query={query}>{data => <><UserList users={data.items} /><Pager offset={offset} total={data.total} onChange={setOffset} /></>}</Data>}
+      : <Data query={query}>{data => <>{data.items.length ? <ul className="player-directory">{data.items.map(user => <li key={user.id}>
+        <PlayerLink user={user} avatar /><span className="muted">@{user.username}</span>
+        <strong>{Math.round(user.rating)} <small>{t('elo')}</small></strong>
+      </li>)}</ul> : <Empty message={t('playerEmpty')} />}<Pager offset={offset} total={data.total} onChange={setOffset} /></>}</Data>}
   </>
 }
 
@@ -149,7 +172,7 @@ export function ComparePage() {
   const { t } = useI18n()
   const query = useData<Model['PairStats']>(`/public/stats/compare/${a?.id}/${b?.id}`, !!a && !!b)
   return <>
-    <Heading title={t('compare')} />
+    <Heading title={t('compare')} subtitle={t('compareIntro')} />
     <div className="form-grid">
       <PlayerPicker label={t('sideA')} value={a} onChange={setA} exclude={b ? [b.id] : []} />
       <PlayerPicker label={t('sideB')} value={b} onChange={setB} exclude={a ? [a.id] : []} />

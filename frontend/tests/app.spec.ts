@@ -42,7 +42,10 @@ for (const width of [320, 375, 768, 1280]) {
     page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
     await page.setViewportSize({ width, height: 840 })
     await page.goto('/')
+    await expect(page.getByRole('heading', { name: 'TennisFans', exact: true, level: 1 })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Your tennis, on the record.' })).toBeVisible()
+    await expect(page.locator('.hero-photo')).toHaveJSProperty('complete', true)
+    expect(await page.locator('.hero-photo').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0)
     await expect(page.locator('.skeleton')).toHaveCount(0)
     await page.screenshot({ path: testInfo.outputPath('home.png'), fullPage: true })
     for (const path of ['/ratings', '/matches', '/tournaments', '/register']) {
@@ -85,7 +88,7 @@ test('installs the app shell and shows previously loaded public content offline'
 })
 
 for (const width of [375, 1280]) {
-  test(`records, rates, disputes, and completes matches at ${width}px`, async ({ browser, page, request }) => {
+  test(`records, rates, disputes, and completes matches at ${width}px`, async ({ browser, page, request }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
     const code = prefix + width
     const alice = 'alice-' + code, bob = 'bob-' + code, dana = 'dana-' + code, organizer = 'org-' + code
@@ -99,6 +102,7 @@ for (const width of [375, 1280]) {
     await page.getByLabel('Password', { exact: true }).fill(password)
     await page.getByRole('button', { name: 'Create account', exact: true }).click()
     await expect(page).toHaveURL(/\/account$/)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
 
     await page.goto('/friendlies/new')
     await pick(page, 'Choose a player', bob)
@@ -108,6 +112,7 @@ for (const width of [375, 1280]) {
     await expect(page).toHaveURL(/\/matches\//)
     const friendly = page.url()
     await expect(page.getByText('6:4')).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     await expect(page.getByText(/Alice .*1516/)).toBeVisible()
     await page.locator('input[type="file"]').setInputFiles({
       name: 'tennis.png', mimeType: 'image/png',
@@ -184,6 +189,8 @@ for (const width of [375, 1280]) {
     await admin.goto(tour)
     await expect(admin.getByText('Completed', { exact: true }).first()).toBeVisible()
     await expect(admin.getByRole('heading', { name: 'Standings' })).toBeVisible()
+    expect(await admin.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    await admin.screenshot({ path: testInfo.outputPath('completed-tournament.png'), fullPage: true })
     await admin.getByRole('button', { name: 'Permanently delete tournament' }).click()
     await admin.getByRole('button', { name: 'Confirm', exact: true }).click()
     await expect(admin).toHaveURL(/\/tournaments$/)

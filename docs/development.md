@@ -19,6 +19,14 @@ Open the TennisFans checkout in Codex. Project skills live in `.agents/skills/` 
 - The curated installer no longer resolves `frontend-skill` by name. The project includes [the original package from `openai/skills` at `82d2c5b`](https://github.com/openai/skills/tree/82d2c5b44ac234ec0f204f647562a4349d90ef43/skills/.curated/frontend-skill) under Apache-2.0, checked against the [Frontend Skill block in the OpenAI article](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4). Both upstream licenses are included.
 - The packages contain guidance and examples, with no executable scripts or required application libraries. The Motion, Framer Motion, and `react-use-measure` examples are optional. Keep the prototype picker's HTML static or render with React, and render stress-test fixtures as literal text. For mobile testing, use a local preview with test data and limit any LAN access to a trusted test network. For `learn-taste`, use this conversation or prior sessions explicitly named in the task.
 
+## Frontend design direction
+
+The Court design uses the approved morning tennis photograph, warm ivory surfaces, forest green typography, and lime primary actions. Keep the homepage sequence: photo and match-recording action, upcoming tournaments in chronological order, recent results, then a short Elo leaderboard. Use rows, typography, and thin dividers for club activity rather than decorative dashboard cards.
+
+Shared components and tokens live in `frontend/src/components/ui.tsx` and `frontend/src/style.css`. The court photo and locally hosted Inter variable fonts live in `frontend/src/assets/`; the font license is included. Retain Russian and English, light/dark/system themes, keyboard focus, reduced motion, touch targets, and PWA caching when extending screens.
+
+For visual checks, use a separate local database with representative players, singles and doubles results, tournament rosters, applications, brackets, and gallery photos. Check public pages, result entry and disputes, account forms, tournament management, and administration on mobile and desktop. Playwright exercises the existing match-to-tournament workflow at both sizes and records homepage screenshots at 320, 375, 768, and 1280 px.
+
 ## Local setup and checks
 
 Use Python 3.12, uv 0.9.21, Node.js 24, npm, and a dedicated PostgreSQL 16+ database. Keep runtime state outside Git.
