@@ -35,6 +35,20 @@ async function singleSet(page: Page, a: string, b: string) {
   await page.getByLabel('Games or deciding points B').fill(b)
 }
 
+async function courtBrand(page: Page, header: string, footer: string) {
+  for (const [selector, source] of [['.site-header .brand', header], ['.site-footer .brand', footer]]) {
+    const link = page.locator(selector)
+    await expect(link).toHaveAccessibleName('TennisFans')
+    await expect(link).toHaveAttribute('href', '/')
+    await expect(link).toHaveText('')
+    const image = link.locator('img:visible')
+    await expect(image).toHaveCount(1)
+    await expect(image).toHaveAttribute('src', `/brand/court-mark${source}.svg`)
+    await expect(image).toHaveAttribute('alt', '')
+    await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true)
+  }
+}
+
 for (const width of [320, 375, 768, 1280]) {
   test(`fits a ${width}px viewport and localizes navigation`, async ({ page }, testInfo) => {
     const errors: string[] = []
@@ -47,10 +61,12 @@ for (const width of [320, 375, 768, 1280]) {
     await expect(page.locator('.hero-photo')).toHaveJSProperty('complete', true)
     expect(await page.locator('.hero-photo').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0)
     await expect(page.locator('.skeleton')).toHaveCount(0)
+    await courtBrand(page, '-light', '')
     await page.screenshot({ path: testInfo.outputPath('home.png'), fullPage: true })
     for (const path of ['/ratings', '/matches', '/tournaments', '/register']) {
       await page.goto(path)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+      await courtBrand(page, '', '')
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     }
     await page.getByRole('combobox', { name: 'Language' }).selectOption('ru')
@@ -59,6 +75,15 @@ for (const width of [320, 375, 768, 1280]) {
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
     await page.getByRole('combobox', { name: 'Тема' }).selectOption('dark')
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await courtBrand(page, '-light', '-light')
+    await page.getByRole('combobox', { name: 'Тема' }).selectOption('system')
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await courtBrand(page, '-light', '-light')
+    await page.emulateMedia({ colorScheme: 'light' })
+    await courtBrand(page, '', '')
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await page.getByRole('combobox', { name: 'Тема' }).selectOption('light')
+    await courtBrand(page, '', '')
     expect(errors).toEqual([])
   })
 }
@@ -69,6 +94,42 @@ test('installs the app shell and shows previously loaded public content offline'
   expect(manifest.icons.map((icon: { sizes: string }) => icon.sizes)).toContain('512x512')
   await page.goto('/ratings')
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true)
+  const brandPaths = ['/brand/court-mark.svg', '/brand/court-mark-light.svg', '/brand/favicon.svg',
+    '/brand/favicon-16.png', '/brand/favicon-32.png', '/brand/apple-touch-icon.png',
+    '/brand/icon-192.png', '/brand/icon-512.png', '/brand/icon-maskable.png']
+  for (const path of brandPaths) {
+    const response = await request.get(path)
+    expect(response.status()).toBe(200)
+    expect(response.headers()['content-type']).toBe(path.endsWith('.svg') ? 'image/svg+xml' : 'image/png')
+  }
+  const artwork = await page.evaluate(async () => Promise.all(
+    ['favicon-16.png', 'favicon-32.png', 'icon-192.png', 'icon-512.png'].map(async name => {
+      const image = await createImageBitmap(await (await fetch('/brand/' + name)).blob())
+      const canvas = new OffscreenCanvas(image.width, image.height)
+      const context = canvas.getContext('2d')!
+      context.drawImage(image, 0, 0)
+      const { data, width, height } = context.getImageData(0, 0, image.width, image.height)
+      let left = width, right = -1, top = height, bottom = -1, maxAlpha = 0
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3]
+        maxAlpha = Math.max(maxAlpha, alpha)
+        if (alpha) {
+          left = Math.min(left, x); right = Math.max(right, x)
+          top = Math.min(top, y); bottom = Math.max(bottom, y)
+        }
+      }
+      return { name, width, height, inkWidth: right - left + 1, inkHeight: bottom - top + 1, maxAlpha,
+        corners: [3, (width - 1) * 4 + 3, (height - 1) * width * 4 + 3, data.length - 1].map(index => data[index]) }
+    }),
+  ))
+  for (const image of artwork) {
+    expect(image.width).toBe(image.height)
+    expect(image.inkWidth / image.width).toBeGreaterThanOrEqual(.85)
+    expect(image.maxAlpha).toBe(255)
+    expect(image.corners).toEqual([0, 0, 0, 0])
+    if (image.name.startsWith('favicon')) expect(image.inkHeight / image.height).toBeGreaterThanOrEqual(.6)
+    else expect(image.inkWidth / image.inkHeight).toBeCloseTo(784 / 480, 1)
+  }
   await page.reload()
   await expect.poll(() => page.evaluate(async () => {
     const cache = await caches.open('tennisfans-public-v1')
@@ -78,6 +139,9 @@ test('installs the app shell and shows previously loaded public content offline'
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Ratings' })).toBeVisible()
   await expect(page.getByRole('status').filter({ hasText: 'Offline' })).toBeVisible()
+  await courtBrand(page, '', '')
+  expect(await page.evaluate(async paths => Promise.all(paths.map(async path => (await fetch(path)).ok)), brandPaths))
+    .toEqual(brandPaths.map(() => true))
   await expect(page.getByText('The application configuration could not be loaded.')).toHaveCount(0)
   const publicPaths = await page.evaluate(async () => {
     const cache = await caches.open('tennisfans-public-v1')
@@ -116,7 +180,7 @@ for (const width of [375, 1280]) {
     await expect(page.getByText(/Alice .*1516/)).toBeVisible()
     await page.locator('input[type="file"]').setInputFiles({
       name: 'tennis.png', mimeType: 'image/png',
-      buffer: readFileSync('public/icons/icon-192.png'),
+      buffer: readFileSync('public/brand/icon-192.png'),
     })
     await page.getByRole('button', { name: 'Upload photos' }).click()
     await expect(page.getByRole('link', { name: 'Open photo' })).toBeVisible()

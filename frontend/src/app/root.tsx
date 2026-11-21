@@ -109,12 +109,20 @@ function StatusLine() {
   </>
 }
 
+function BrandLink() {
+  const { t } = useI18n()
+  return <Link to="/" className="brand" aria-label={t('brand')}>
+    <img className="brand-mark" width="784" height="480" src="/brand/court-mark.svg" alt="" />
+    <img className="brand-mark brand-mark-light" width="784" height="480" src="/brand/court-mark-light.svg" alt="" />
+  </Link>
+}
+
 function Navigation({ account }: { account: Account | null }) {
   const { t } = useI18n()
   return <header className="site-header">
     <a href="#content" className="skip">{t('skip')}</a>
     <div className="nav-inner">
-      <Link to="/" className="brand"><img width="38" height="38" src="/icons/icon-192.png" alt="" />{t('brand')}</Link>
+      <BrandLink />
       <nav className="main-nav" aria-label={t('mainNavigation')}>
         {([['matches', '/matches'], ['tournaments', '/tournaments'], ['players', '/players'], ['ratings', '/ratings']]).map(([label, path]) =>
           <NavLink to={path} key={path}>{t(label)}</NavLink>)}
@@ -170,7 +178,7 @@ function Body() {
       </Routes>
     </main>
     <footer className="site-footer"><div className="footer-inner">
-      <Link to="/" className="brand">{t('brand')}</Link><p>{t('footerLine')}</p>
+      <BrandLink /><p>{t('footerLine')}</p>
     </div></footer>
   </div>
 }
