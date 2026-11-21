@@ -48,9 +48,13 @@ it('precaches all runtime brand assets and revises the shell when their bytes ch
       .filter(name => name !== 'court-original-transparent.png').map(name => '/brand/' + name).sort())
     expect(assets.some(path => path.startsWith('/icons/'))).toBe(false)
     for (const path of assets) expect(readFileSync(join(directory, 'dist', path)).length).toBeGreaterThan(0)
-    const mark = join(directory, 'dist/brand/court-mark.svg')
-    writeFileSync(mark, readFileSync(mark, 'utf8') + '\n')
-    expect(build().match(/^const revision = (.+)$/m)![1]).not.toBe(first.match(/^const revision = (.+)$/m)![1])
+    for (const name of ['favicon.svg', 'favicon-16.png', 'favicon-32.png', 'icon-192.png', 'icon-512.png']) {
+      const asset = join(directory, 'dist/brand', name)
+      const original = readFileSync(asset)
+      writeFileSync(asset, Buffer.concat([original, Buffer.from('\n')]))
+      expect(build().match(/^const revision = (.+)$/m)![1]).not.toBe(first.match(/^const revision = (.+)$/m)![1])
+      writeFileSync(asset, original)
+    }
   } finally {
     rmSync(directory, { recursive: true, force: true })
   }

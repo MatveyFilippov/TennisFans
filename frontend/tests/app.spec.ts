@@ -102,6 +102,34 @@ test('installs the app shell and shows previously loaded public content offline'
     expect(response.status()).toBe(200)
     expect(response.headers()['content-type']).toBe(path.endsWith('.svg') ? 'image/svg+xml' : 'image/png')
   }
+  const artwork = await page.evaluate(async () => Promise.all(
+    ['favicon-16.png', 'favicon-32.png', 'icon-192.png', 'icon-512.png'].map(async name => {
+      const image = await createImageBitmap(await (await fetch('/brand/' + name)).blob())
+      const canvas = new OffscreenCanvas(image.width, image.height)
+      const context = canvas.getContext('2d')!
+      context.drawImage(image, 0, 0)
+      const { data, width, height } = context.getImageData(0, 0, image.width, image.height)
+      let left = width, right = -1, top = height, bottom = -1, maxAlpha = 0
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3]
+        maxAlpha = Math.max(maxAlpha, alpha)
+        if (alpha) {
+          left = Math.min(left, x); right = Math.max(right, x)
+          top = Math.min(top, y); bottom = Math.max(bottom, y)
+        }
+      }
+      return { name, width, height, inkWidth: right - left + 1, inkHeight: bottom - top + 1, maxAlpha,
+        corners: [3, (width - 1) * 4 + 3, (height - 1) * width * 4 + 3, data.length - 1].map(index => data[index]) }
+    }),
+  ))
+  for (const image of artwork) {
+    expect(image.width).toBe(image.height)
+    expect(image.inkWidth / image.width).toBeGreaterThanOrEqual(.85)
+    expect(image.maxAlpha).toBe(255)
+    expect(image.corners).toEqual([0, 0, 0, 0])
+    if (image.name.startsWith('favicon')) expect(image.inkHeight / image.height).toBeGreaterThanOrEqual(.6)
+    else expect(image.inkWidth / image.inkHeight).toBeCloseTo(784 / 480, 1)
+  }
   await page.reload()
   await expect.poll(() => page.evaluate(async () => {
     const cache = await caches.open('tennisfans-public-v1')
